@@ -57,3 +57,31 @@ Wrote `eval/rollout.py`, `eval/visualizer.py` (pygame), `eval/headless.py` (metr
 
 Baselines on seed=7,42 with 4 agents, 64 steps: random 0.016 throughput, greedy A* 0.07 (seed=7 deadlocked at 0 — this is the failure mode PRIMAL2's convention learning fixes).
 
+
+## 2026-07-02 01:15 — Run 1 stopped at ep 450, diagnosing collapse
+
+After ~450 episodes of run 1 (config: lr=2e-5, entropy=0.01 = paper defaults):
+- IL BC loss: 1.59 → 0.54 (good).
+- RL value loss: 18.5 → 0.07 (good — value fit).
+- RL entropy: 1.61 → 0.29 (falling fast).
+- RL goals/ep: 2.25 → 0.20 (**collapse**: agents standing still).
+
+Hypothesis: single-worker training lacks the rollout diversity that the paper's
+9-worker A3C provides, so low entropy weight leads to premature convergence to
+"stay-forever" policy (which trivially avoids collisions and stays valid).
+
+Also noticed: `valid_rate=1.000` was misleading because we mask before sampling —
+metric measured nothing about the policy. Fixed to compare unmasked argmax.
+
+## 2026-07-02 01:19 — Iteration 2 config
+
+- `lr` 2e-5 → **5e-5**
+- `entropy_weight` 0.01 → **0.05**
+- Added `il_warmup_episodes = 500` (IL-only for first 500 eps to bootstrap a policy).
+- `valid_rate` metric now uses unmasked argmax (Section V.A.1 spirit).
+- Also fixed the accidental 2× on value loss (removed internal 0.5 factor).
+
+Restarted training as run 2 with seed=43. `deadline-hours=5.5`.
+
+Archived run 1 checkpoint as `checkpoints/primal2_run1_stopped_ep450.pt` for A/B comparison later.
+

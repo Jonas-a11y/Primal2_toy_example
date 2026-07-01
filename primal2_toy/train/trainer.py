@@ -235,25 +235,33 @@ class Trainer:
         cfg = self.cfg
         grid, task, corridors, cell_to_id = _random_env(cfg, self.rng)
         n = grid.n_agents
-        # Get expert plans.
-        starts = [tuple(grid.positions[i]) for i in range(n)]
-        goals = [tuple(task.goals[i]) for i in range(n)]
-        expert_actions = expert_plan(
-            grid.obstacle_map, starts, goals, horizon=cfg.il_episode_length, rng=self.rng
-        )
         builder = ObservationBuilder(grid, task.goals, corridors, cell_to_id, self.obs_spec)
         hidden = self.net.init_hidden(n, self.device)
         traj_logits: list[list[torch.Tensor]] = [[] for _ in range(n)]
         traj_expert: list[list[int]] = [[] for _ in range(n)]
         traj_valid: list[list[np.ndarray]] = [[] for _ in range(n)]
         T = cfg.il_episode_length
+
+        # Paper adapts one-shot MAPF planners to LMAPF by combining one-shot
+        # instances (Section V.A.2). We replan whenever any agent reaches its goal.
+        def _plan_now(remaining: int) -> list[list[int]]:
+            starts = [tuple(grid.positions[i]) for i in range(n)]
+            goals = [tuple(task.goals[i]) for i in range(n)]
+            return expert_plan(grid.obstacle_map, starts, goals,
+                               horizon=max(1, remaining), rng=self.rng)
+
+        expert_actions = _plan_now(T)
+        plan_start = 0
         for t in range(T):
+            local_t = t - plan_start
             sp, sc = _batch_obs(builder, n)
-            sp = sp.to(self.device)
-            sc = sc.to(self.device)
+            sp = sp.to(self.device); sc = sc.to(self.device)
             logits, values, hidden = self.net(sp, sc, hidden)
             valid = compute_valid_actions(grid, corridors, cell_to_id)
-            actions_np = np.array([expert_actions[i][t] for i in range(n)], dtype=np.int64)
+            actions_np = np.array([
+                expert_actions[i][local_t] if local_t < len(expert_actions[i]) else 0
+                for i in range(n)
+            ], dtype=np.int64)
             for i in range(n):
                 traj_logits[i].append(logits[i])
                 traj_expert[i].append(int(actions_np[i]))
@@ -261,6 +269,11 @@ class Trainer:
             rewards, arrived, done = task.step(actions_np)
             if done:
                 break
+            # If any agent arrived, task.py has already reassigned its goal;
+            # re-plan for everyone using new goals and current positions.
+            if bool(arrived.any()):
+                expert_actions = _plan_now(T - (t + 1))
+                plan_start = t + 1
         total_loss = torch.zeros((), device=self.device)
         metrics = {"bc_loss": 0.0, "valid_loss": 0.0}
         for i in range(n):
@@ -314,14 +327,15 @@ class Trainer:
         }, path)
         return path
 
-    def load_checkpoint(self, path: str) -> None:
+    def load_checkpoint(self, path: str, weights_only: bool = False) -> None:
         s = torch.load(path, map_location=self.device, weights_only=False)
         self.net.load_state_dict(s["model"])
-        try:
-            self.optim.load_state_dict(s["optim"])
-        except Exception:
-            pass
-        self.episode = int(s.get("episode", 0))
+        if not weights_only:
+            try:
+                self.optim.load_state_dict(s["optim"])
+            except Exception:
+                pass
+            self.episode = int(s.get("episode", 0))
 
     def run(self, deadline_ts: float | None = None) -> None:
         cfg = self.cfg
