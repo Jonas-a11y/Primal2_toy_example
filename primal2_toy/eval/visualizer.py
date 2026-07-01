@@ -3,6 +3,9 @@
 Displays the gridworld: obstacles grey, agents colored circles, goals matching
 hollow squares. Shows a small HUD with step count, throughput (arrivals/step),
 and the current world parameters.
+
+Optional side panel (toggle with V) shows the 13 observation channels for the
+currently-selected agent (click on an agent to select).
 """
 from __future__ import annotations
 
@@ -23,6 +26,11 @@ OBSTACLE = (60, 60, 60)
 GRID_LINE = (210, 210, 210)
 HUD_BG = (30, 30, 30)
 HUD_FG = (240, 240, 240)
+PANEL_BG = (250, 250, 250)
+CHANNEL_LABELS = [
+    "obstacles", "own goal", "others", "others' goals", "path length",
+    "ΔX", "ΔY", "blocking", "future t+1", "future t+2", "future t+3",
+]
 
 
 def agent_color(i: int) -> tuple[int, int, int]:
@@ -88,6 +96,45 @@ def draw(
         pygame.draw.circle(surface, color, (cx, cy), cell_size // 2 - 3)
 
 
+def draw_obs_panel(
+    surface: pygame.Surface,
+    spatial: np.ndarray,  # (C, F, F)
+    origin: tuple[int, int],
+    font: pygame.font.Font,
+    cell: int = 8,
+) -> None:
+    C, F, _ = spatial.shape
+    ox, oy = origin
+    per_row = 3
+    padding = 6
+    label_h = 16
+    tile_w = F * cell + padding
+    tile_h = F * cell + label_h + padding
+    for c in range(C):
+        rr = c // per_row
+        cc = c % per_row
+        tx = ox + cc * tile_w
+        ty = oy + rr * tile_h
+        # Label
+        label = CHANNEL_LABELS[c] if c < len(CHANNEL_LABELS) else f"ch{c}"
+        img = font.render(label, True, (30, 30, 30))
+        surface.blit(img, (tx, ty))
+        # Heatmap
+        ch = spatial[c]
+        mn = float(ch.min()); mx = float(ch.max())
+        rng_val = mx - mn if mx > mn else 1.0
+        for r in range(F):
+            for cc2 in range(F):
+                v = (ch[r, cc2] - mn) / rng_val if rng_val > 0 else 0.0
+                v = float(np.clip(v, 0.0, 1.0))
+                # Blue-to-red colormap.
+                col = (int(255 * v), int(120 * (1 - v)), int(255 * (1 - v)))
+                pygame.draw.rect(
+                    surface, col,
+                    (tx + cc2 * cell, ty + label_h + r * cell, cell, cell)
+                )
+
+
 def run_demo(args) -> None:
     device = torch.device(
         "mps" if torch.backends.mps.is_available() and args.device in ("auto", "mps")
@@ -108,8 +155,14 @@ def run_demo(args) -> None:
     w_grid = grid.w * cell
     h_grid = grid.h * cell
     hud_h = 80
-    screen = pygame.display.set_mode((w_grid, h_grid + hud_h))
+    panel_w = 3 * (11 * 8 + 6) + 20  # room for 3 columns of 11×11 obs heatmaps
+    panel_h = 4 * (11 * 8 + 16 + 6) + 30
+
+    show_panel = False
+    selected_agent = 0
+    screen = pygame.display.set_mode((w_grid + panel_w, max(h_grid + hud_h, panel_h)))
     font = pygame.font.SysFont("Menlo, monospace", 18)
+    font_small = pygame.font.SysFont("Menlo, monospace", 11)
 
     running = True
     paused = False
@@ -120,15 +173,28 @@ def run_demo(args) -> None:
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
                 running = False
+            elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
+                # Click to select agent.
+                mx, my = ev.pos
+                if mx < w_grid and my < h_grid:
+                    r_click = my // cell
+                    c_click = mx // cell
+                    for i in range(grid.n_agents):
+                        if int(grid.positions[i, 0]) == r_click and int(grid.positions[i, 1]) == c_click:
+                            selected_agent = i
+                            break
             elif ev.type == pygame.KEYDOWN:
                 if ev.key == pygame.K_SPACE:
                     paused = not paused
+                elif ev.key == pygame.K_v:
+                    show_panel = not show_panel
                 elif ev.key == pygame.K_r:
                     grid, task, corridors, cell_to_id = build_scenario(
                         size=args.size, density=args.density, corridor_length=args.corridor_length,
                         n_agents=args.agents, seed=int(time.time()) & 0xFFFF,
                     )
                     rollout = Rollout(net, grid, task, corridors, cell_to_id, device, obs_spec)
+                    selected_agent = 0
                 elif ev.key == pygame.K_PLUS or ev.key == pygame.K_EQUALS:
                     fps = min(60, fps + 1)
                     tick_ms_target = 1000 / max(1, fps)
@@ -150,11 +216,29 @@ def run_demo(args) -> None:
         lines = [
             f"step {rollout.step_idx:4d}   throughput {throughput:.3f}   arrivals {rollout.total_arrivals}",
             f"world {grid.h}x{grid.w}  agents {grid.n_agents}  seed {args.seed}  fps {fps}",
-            "[SPACE] pause  [R] reset  [+/-] speed  [ESC] quit",
+            f"[SPACE] pause  [R] reset  [V] obs panel  [+/-] speed  [click] select agent  [ESC] quit",
         ]
         for i, s in enumerate(lines):
             img = font.render(s, True, HUD_FG)
             screen.blit(img, (10, h_grid + 6 + i * 22))
+
+        # Highlight selected agent.
+        if show_panel:
+            sr, sc = int(grid.positions[selected_agent, 0]), int(grid.positions[selected_agent, 1])
+            pygame.draw.rect(screen, (0, 0, 0),
+                             (sc * cell - 2, sr * cell - 2, cell + 4, cell + 4), width=2)
+            # Obs panel background.
+            pygame.draw.rect(screen, PANEL_BG, (w_grid, 0, panel_w, screen.get_height()))
+            # Build obs for selected agent.
+            rollout.builder.refresh_step_cache()
+            spatial, scalars = rollout.builder.build(selected_agent)
+            title = font.render(
+                f"agent {selected_agent} obs channels  |  d(→goal)={scalars[2]:.2f}",
+                True, (30, 30, 30),
+            )
+            screen.blit(title, (w_grid + 10, 8))
+            draw_obs_panel(screen, spatial, (w_grid + 10, 30), font_small, cell=8)
+
         pygame.display.flip()
     pygame.quit()
 
