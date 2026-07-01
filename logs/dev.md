@@ -85,3 +85,12 @@ Restarted training as run 2 with seed=43. `deadline-hours=5.5`.
 
 Archived run 1 checkpoint as `checkpoints/primal2_run1_stopped_ep450.pt` for A/B comparison later.
 
+
+## 2026-07-02 01:02 — Diagnosed IL stay-heavy bias, restarted as run 3
+
+Discovered that the expert plans were mostly "stay" after agents reached goals (71% stay actions overall). Fix: **replan on every arrival**, matching the paper's Section V.A.2 approach for adapting one-shot MAPF planners to LMAPF ("several one-shot MAPF instances need to be combined for a single LMAPF environment").
+
+After fix: goals/IL-episode jumps from ~6 to 20-45. Expert now provides a rich stream of non-stay demonstrations.
+
+Restarted as run 3 (seed=44, deadline 5.0h) warm-starting from run 2's ep800 weights with a fresh optimizer.
+
