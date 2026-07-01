@@ -45,8 +45,8 @@ def a3c_loss(
     probs = log_probs.exp()
     entropy = -(probs * log_probs).sum(dim=-1)  # (T,)
     actor_loss = -(log_pa * advantages).mean() - entropy_weight * entropy.mean()
-    # Value loss: L2.
-    value_loss = 0.5 * (returns - values).pow(2).mean()
+    # Value loss: L2 (paper: "standard L2 loss L_value").
+    value_loss = (returns - values).pow(2).mean()
     # Valid loss: per-action Bernoulli BCE on sigmoid(logits).
     # Paper's Eq. 3: L_valid = mean_t sum_i [log(v_i * σ(π_i)) + log((1-v_i)*(1-σ(π_i)))]
     # which is equivalent (up to sign) to standard BCE-with-logits. We use BCE

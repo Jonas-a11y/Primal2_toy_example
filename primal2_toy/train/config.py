@@ -19,19 +19,27 @@ class TrainConfig:
     il_episode_length: int = 64
 
     # Loss weights (paper's Section IV.D says "manually tuned").
+    # Paper defaults: α=0.5, β=1.0, ζ=0.5, σ_H=0.01. We bumped entropy weight for
+    # our single-worker regime (paper's 9 workers provide diversity we lack).
     value_weight: float = 0.5
     actor_weight: float = 1.0
     valid_weight: float = 0.5
-    entropy_weight: float = 0.01
+    entropy_weight: float = 0.05
     gamma: float = 0.95
 
-    # Optimizer (paper V.B.1).
-    lr: float = 2e-5
+    # Optimizer (paper V.B.1). We also bump the initial LR modestly since our
+    # single-worker training sees fewer diverse rollouts per unit compute.
+    lr: float = 5e-5
     lr_decay_ref_episode: int = 1000  # decay proportionally to 1/sqrt(episode / ref)
     grad_clip: float = 5.0
 
     # Ratio & schedule.
     il_prob: float = 0.5
+    # IL warmup: for the first N episodes force IL-only, so the network gets a
+    # decent policy initialization before RL episodes begin. Paper doesn't
+    # explicitly do this; we add it because with only one worker the RL signal
+    # early on is very noisy and can destabilize the policy.
+    il_warmup_episodes: int = 500
 
     # Observation.
     fov: int = 11

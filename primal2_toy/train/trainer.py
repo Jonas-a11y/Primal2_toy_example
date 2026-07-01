@@ -144,7 +144,11 @@ class Trainer:
         traj_valid: list[list[np.ndarray]] = [[] for _ in range(n)]
 
         hidden = self.net.init_hidden(n, self.device)
-        valid_choose_total, valid_choose_correct = 0, 0
+        # Paper's "valid rate" (Section V.A.1) is the fraction of *greedy-argmax*
+        # actions that turn out to be valid. We compute it against the unmasked
+        # argmax so it reflects whether the policy has *learned* validity — not
+        # whether masking rescued it.
+        valid_argmax_total, valid_argmax_correct = 0, 0
         T = cfg.rl_episode_length
         for t in range(T):
             sp, sc = _batch_obs(builder, n)
@@ -153,6 +157,13 @@ class Trainer:
             logits, values, hidden = self.net(sp, sc, hidden)
             valid = compute_valid_actions(grid, corridors, cell_to_id)
             valid_t = torch.from_numpy(valid).to(self.device)
+            # For the valid-rate metric, record whether unmasked argmax is valid.
+            with torch.no_grad():
+                greedy = logits.argmax(dim=-1).cpu().numpy()
+            for i in range(n):
+                if valid[i, int(greedy[i])] == 1.0:
+                    valid_argmax_correct += 1
+                valid_argmax_total += 1
             # Sample only from valid actions (paper: "actions are sampled from a
             # list of valid actions"). We mask logits and re-normalize.
             masked = logits.clone()
@@ -168,9 +179,6 @@ class Trainer:
                 traj_values[i].append(values[i])
                 traj_actions[i].append(int(actions_np[i]))
                 traj_valid[i].append(valid[i].copy())
-                if valid[i, int(actions_np[i])] == 1.0:
-                    valid_choose_correct += 1
-                valid_choose_total += 1
 
             rewards, arrived, done = task.step(actions_np)
             for i in range(n):
@@ -218,7 +226,7 @@ class Trainer:
         self.optim.step()
 
         metrics["loss"] = float(total_loss.item())
-        metrics["valid_rate"] = (valid_choose_correct / valid_choose_total) if valid_choose_total else 0.0
+        metrics["valid_rate"] = (valid_argmax_correct / valid_argmax_total) if valid_argmax_total else 0.0
         metrics["goals_reached"] = int(task.goals_reached_count.sum())
         metrics["n_agents"] = n
         return metrics
@@ -325,7 +333,10 @@ class Trainer:
             self.episode += 1
             self._apply_lr()
             wall_t0 = time.time()
-            do_il = self.rng.random() < cfg.il_prob
+            if self.episode <= cfg.il_warmup_episodes:
+                do_il = True
+            else:
+                do_il = self.rng.random() < cfg.il_prob
             if do_il:
                 metrics = self._il_episode()
                 kind = "IL"
