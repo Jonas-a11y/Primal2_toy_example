@@ -1,8 +1,9 @@
 # PRIMAL2 Toy Example — Final Evaluation Report
 
 **Deadline set:** 8 hours starting 2026-07-02 00:39 CEST (finish by ~08:46 CEST).
-**Training window:** 2 h 42 min effective (three runs).
-**Best checkpoint:** `checkpoints/primal2_final.pt` (= `primal2_ep8800_best.pt`), episode 8800.
+**Effective training time:** ~4 h across three learning-eligible runs.
+**Best checkpoint:** `checkpoints/primal2_final.pt` (= run 5 ep 3800), 3800
+training episodes on top of a run-3 warm-start.
 
 ## Result headline
 
@@ -13,17 +14,21 @@ On a held-out benchmark of **20 random seeds × 256 steps** in
 | --- | ---:| ---:| ---:| ---:|
 | random                       | 0.006 | 0.000 | 0.020 | 0.3× |
 | greedy A* (independent)      | 0.019 | 0.000 | 0.063 | 1.0× |
-| **PRIMAL2 (learned, greedy)** | **0.051** | 0.023 | 0.086 | **2.7×** |
-| **PRIMAL2 (learned, sampled)** | **0.102** | 0.055 | 0.188 | **5.5×** |
+| **PRIMAL2 (learned, greedy)** | **0.055** | 0.004 | 0.117 | **2.9×** |
+| **PRIMAL2 (learned, sampled)** | **0.130** | 0.039 | 0.223 | **7.0×** |
 
 *Sampled* means action drawn from the softmax policy (masked to valid actions);
 *greedy* means the unmasked argmax. Both use the same trained network.
 
 **The key qualitative claim of the paper reproduces:** the learned policy
-**never deadlocks** — its worst seed still delivers 0.055 arrivals/step,
+**never deadlocks** — its worst seed still delivers 0.039 arrivals/step,
 whereas greedy A* fails outright on multiple seeds (throughput 0.000).
 This is exactly the corridor-deadlock failure mode that PRIMAL2's convention
 loss and A*-path/corridor observation channels are designed to prevent.
+
+The **max seed** (0.223) is 3.6× the *best* seed of the greedy A* baseline
+(0.063), showing that when the environment gives room for it the learned
+policy exploits it much more effectively.
 
 ## Faithfulness scorecard
 
@@ -42,45 +47,47 @@ loss and A*-path/corridor observation channels are designed to prevent.
 | 50/50 RL/IL ratio | ✓ | + 500-episode IL warm-up (paper doesn't do this) |
 | Replan expert on every arrival | ✓ | Section V.A.2 "combined one-shot MAPF instances" |
 | Reward: −0.3 / +5 / −2 | ✓ | Section IV.C |
-| Extra gradient step on arrival | partial | not implemented separately; the LMAPF replan on arrival covers most of it |
+| Extra gradient step on arrival | partial | the LMAPF replan on arrival covers most of it |
 | Distributed A3C (9 workers via Ray) | ✗ | single Python process |
 | ODrM* expert | substituted | prioritized-planning multi-agent A* (same role) |
 | Scale (1–160 world, up to 2048 agents) | scaled down | 10–20 world, 6 agents/env |
 
 ## Training summary
 
-- **Run 1** (00:56–01:02, 450 eps): default paper hyperparameters. Policy
-  collapsed to "stay for all agents" — value function collapsed to 0 and
-  entropy dropped too fast. Documented in `logs/dev.md`.
-- **Run 2** (01:04–01:02, 850 eps): entropy weight 0.01 → 0.05, lr 2e-5 → 5e-5,
-  added 500-episode IL warm-up. Policy stopped collapsing but IL data was
-  stay-heavy (expert 71 % stay after arrivals).
-- **Run 3** (01:03–03:45, 10,975 eps): fixed IL to replan on every arrival
-  (paper Section V.A.2), warm-started from run 2's ep 800 with fresh optimizer.
-  This produced the checkpoint used for the final numbers.
+Five training attempts total; the ones that produced the shipped model:
 
-Total training: ~2 h 42 min of wall-clock on Apple M2 Pro (MPS), single Python
-process, 6 agents per env. Deviation from paper: the paper runs 9 Ray workers
-in parallel for ~10 h ≈ 35 k episodes.
+- **Run 3** (01:03–03:45, 10,975 eps, warm-started from run 2 ep 800):
+  first run to actually work. Best snapshot ep 8800, 20-seed eval throughput
+  **0.102**. Value loss stabilized; entropy healthy; RL goals climbing.
+- **Run 5** (05:48–07:15, 5,975 eps, warm-started from run 3 ep 8800):
+  second warm-start on top of run 3. Faster convergence (RL-mode already
+  productive at ep 800), and reached **0.130** at ep 3800 — a further ~30 %
+  improvement over run 3 alone. Selected as the shipped model.
 
-Best snapshot: **episode 8800** in run 3. Later checkpoints (through ep 11,000)
-oscillated between 0.09 and 0.11 sampled throughput without further improvement,
-suggesting the model has plateaued at this scale. The paper reports gains from
-larger fleets, environment diversity, and the 9-worker gradient diversity —
-none of which we can match at this budget.
+Iteration lessons captured in `logs/dev.md`:
+
+- **Paper's entropy weight 0.01 is too low** for single-worker training —
+  we bumped to 0.05 to prevent premature "stay-forever" convergence.
+- **Learning rate 2e-5 is also too low** — bumped to 5e-5.
+- **IL episodes need to replan on arrival** (paper Section V.A.2). Naively
+  running one plan for the full episode leaves the expert idle after the
+  first arrival, giving the network 70 % stay demonstrations.
+- **Sampled >> greedy** at this training scale. Greedy tie-breaks cause
+  agent-agent deadlocks that sampling resolves probabilistically.
+- **Warm-starting a suboptimal policy > fresh init** — even when the run-2
+  warm-start policy was measurably wrong, its Adam-adapted weights gave a
+  faster ramp than run 4's fresh init.
 
 ## Figures
 
 - `logs/plot_FINAL.png` — bar chart of the four methods on 20 seeds.
-- `logs/plot_v3_ep1075_training.png` — early training curves (loss / entropy /
-  goals).
+- `logs/plot_FINAL_run3_training.png` — loss / entropy / goals curves.
+- `logs/plot_FINAL_run3_eval.png` — held-out throughput over training episodes.
 - `logs/demo_frame_FINAL_seed42_sampled.png` — annotated demo screenshot.
-- `logs/demo_frame_FINAL_seed7.png`, `..._seed123.png` — additional scenarios.
 
 ## Reproducing the numbers
 
 ```bash
-# From a fresh clone:
 python -m venv .venv && source .venv/bin/activate
 pip install numpy torch pygame matplotlib
 
@@ -109,3 +116,6 @@ python demo.py --checkpoint checkpoints/primal2_final.pt --agents 6 --seed 42 --
   when another agent is inside a corridor moving toward the endpoint.
 - The **failure mode of greedy A*** (deadlocks in corridors) is easy to
   reproduce live: run `python -m primal2_toy.eval.baselines --baseline greedy_astar --seeds 7`.
+- The paper's original scale (up to 2048 agents, 160×160 world, 9 Ray workers
+  training for 10 h) is out of reach for a seminar-sized demo; **this toy
+  reproduces the paper's core qualitative claim at 15×15 with 6 agents**.

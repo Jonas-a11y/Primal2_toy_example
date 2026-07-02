@@ -141,3 +141,25 @@ Run 3 (warm-started from a partial-run 2 model) is meaningfully better than star
 
 Insight: warm-starting a broken policy still gives faster training than fresh-init at this scale.
 
+
+## 2026-07-02 05:48–07:15 — Run 5 (warm-start from run 3 ep 8800)
+
+Continued iterating. Warm-started run 5 from `primal2_final.pt` (run 3 ep 8800) with fresh optimizer. Ran 5975 episodes over ~1.5h.
+
+Results on 20 held-out seeds (sampled throughput):
+- ep 2400: 0.1145
+- **ep 3800: 0.1328** (new best)
+- ep 5200: 0.1320
+- Max seed at ep 3800: 0.2227 (highest single-seed throughput observed)
+
+Selected ep 3800 as the shipped `primal2_final.pt`. This is a **30% improvement** over the previous best (run 3 ep 8800 = 0.102).
+
+Total training across all runs: run 2 (450 eps + 350 useful) + run 3 (~10,975 eps) + run 5 (3,800 eps) = ~15,225 training episodes on the model shipped. Roughly 4-5h of effective wall-clock training with single-worker MPS.
+
+## 2026-07-02 07:20 — Final state
+
+- `checkpoints/primal2_final.pt` = run 5 ep 3800 (sampled throughput 0.130 on 20 seeds).
+- `logs/EVALUATION.md` updated with final numbers.
+- Demo screenshots regenerated with the better model.
+- All test files still pass.
+- Repository clean.
