@@ -143,8 +143,10 @@ def run_demo(args) -> None:
     )
     obs_spec = ObsSpec(fov=11, n_pred=3)
     net = load_net(args.checkpoint, device, obs_spec)
+    density = 0.0 if args.no_corridors else args.density
+    corridor_length = 1 if args.no_corridors else args.corridor_length
     grid, task, corridors, cell_to_id = build_scenario(
-        size=args.size, density=args.density, corridor_length=args.corridor_length,
+        size=args.size, density=density, corridor_length=corridor_length,
         n_agents=args.agents, seed=args.seed,
     )
     rollout = Rollout(net, grid, task, corridors, cell_to_id, device, obs_spec, greedy=args.greedy)
@@ -190,7 +192,7 @@ def run_demo(args) -> None:
                     show_panel = not show_panel
                 elif ev.key == pygame.K_r:
                     grid, task, corridors, cell_to_id = build_scenario(
-                        size=args.size, density=args.density, corridor_length=args.corridor_length,
+                        size=args.size, density=density, corridor_length=corridor_length,
                         n_agents=args.agents, seed=int(time.time()) & 0xFFFF,
                     )
                     rollout = Rollout(net, grid, task, corridors, cell_to_id, device, obs_spec, greedy=args.greedy)
@@ -255,6 +257,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--device", type=str, default="auto")
     p.add_argument("--greedy", action="store_true",
                    help="Use argmax actions instead of sampling from the policy distribution.")
+    p.add_argument("--no-corridors", action="store_true",
+                   help="Empty room, no obstacles at all (bypasses density/corridor-length).")
     return p.parse_args()
 
 
