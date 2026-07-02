@@ -6,6 +6,8 @@ The paper trains a fully decentralized, communication-free policy for **lifelong
 
 This repo re-implements the paper *as faithfully as is feasible* at a small training scale (a few hours on a laptop), so you can run it live during a seminar.
 
+![comparison bar chart](docs/images/comparison.png)
+
 ## Headline result
 
 On a held-out benchmark of 20 seeds × 256 steps, 15×15 world, 30% density, corridor length 5, 6 agents:
@@ -19,7 +21,7 @@ On a held-out benchmark of 20 seeds × 256 steps, 15×15 world, 30% density, cor
 
 The trained policy also **never deadlocks** — greedy A*'s worst seed gets 0 arrivals; PRIMAL2's worst gets 0.059.
 
-See `logs/EVALUATION.md` for the full write-up.
+See [`docs/EVALUATION.md`](docs/EVALUATION.md) for the full write-up.
 
 ## What's in this repo
 
@@ -35,8 +37,9 @@ See `logs/EVALUATION.md` for the full write-up.
 
 Design notes and dev log:
 
-- `docs/superpowers/specs/2026-07-02-primal2-toy-example-design.md`
-- `logs/dev.md`
+- [`docs/superpowers/specs/2026-07-02-primal2-toy-example-design.md`](docs/superpowers/specs/2026-07-02-primal2-toy-example-design.md)
+- [`docs/dev-log.md`](docs/dev-log.md)
+- [`docs/EVALUATION.md`](docs/EVALUATION.md)
 
 ## Faithfulness to the paper
 
@@ -44,12 +47,12 @@ Design notes and dev log:
 - **Observation channels:** all 13 as described in Section IV.A + Fig. 3.
 - **Losses:** value + actor with entropy bonus (Eq. 1), advantage from bootstrapped value (Eq. 2), valid/BCE loss (Eq. 3), behavior cloning (Eq. 4).
 - **Reward structure:** `-0.3` off goal, `+5` on goal, `-2` on collision (Section IV.C).
-- **Training recipe:** NAdam, lr `2e-5`, inverse-sqrt decay, γ=0.95, RL episodes 256 steps, IL episodes 64 steps, RL/IL ratio 0.5 (Section V.B).
+- **Training recipe:** NAdam, lr `5e-5` (paper uses `2e-5`; we bumped for the single-worker setting), inverse-sqrt decay, γ=0.95, RL episodes 256 steps, IL episodes 64 steps, RL/IL ratio 0.5 (Section V.B).
 - **Env randomization:** size, obstacle density, corridor length per episode.
 
 ## Documented deviations
 
-- Distributed backend: `torch.multiprocessing` instead of Ray, currently **1 worker** (paper uses 9). This is the main gap.
+- Distributed backend: single Python process (paper uses Ray with 9 workers). This is the main gap.
 - Expert planner: prioritized-planning multi-agent A* stand-in for ODrM* (same role, simpler code, still produces valid demonstrations).
 - Scale: world 10–20 (paper 20–160), 6–8 agents/env (paper up to 2048).
 
@@ -62,27 +65,24 @@ pip install numpy torch pygame matplotlib tqdm
 # Live demo with the shipped trained checkpoint:
 python demo.py --checkpoint checkpoints/primal2_final.pt --agents 6 --seed 42 --fps 4
 
+# Empty-room variant (no obstacles, no corridors):
+python demo.py --checkpoint checkpoints/primal2_final.pt --agents 6 --seed 42 --no-corridors --fps 4
+
 # Baselines for comparison:
 PYTHONPATH=. python -m primal2_toy.eval.baselines --baseline random --agents 6
 PYTHONPATH=. python -m primal2_toy.eval.baselines --baseline greedy_astar --agents 6
 
-# Rerun the held-out comparison (produces logs/report_FINAL_ep8800.md):
+# Rerun the held-out comparison:
 PYTHONPATH=. python -m primal2_toy.eval.compare \
     --checkpoint checkpoints/primal2_final.pt \
     --agents 6 --steps 256 --device cpu \
     --seeds 7 42 123 555 2024 8 91 314 777 1000 \
             33 66 200 400 800 1234 5678 9101 2222 3333
 
-# Retrain from scratch (takes ~3h on M2 Pro / MPS to reach the shipped model):
+# Retrain from scratch (takes several hours on M2 Pro / MPS or a modern GPU):
 PYTHONPATH=. python -m primal2_toy.train.main \
     --episodes 50000 --deadline-hours 5 --device mps \
     --n-agents 6 --seed 44 --log-every 25 --ckpt-every 400
-
-# Watch training progress:
-PYTHONPATH=. python -m primal2_toy.eval.monitor logs/train_metrics_*.csv
-
-# Periodically evaluate the latest checkpoint:
-PYTHONPATH=. python -m primal2_toy.eval.watchdog --agents 6 --seeds 7 42 123 555
 ```
 
 ### Demo controls
@@ -98,18 +98,24 @@ PYTHONPATH=. python -m primal2_toy.eval.watchdog --agents 6 --seeds 7 42 123 555
 
 ```
 primal2_toy_example/
-├── primal2.pdf                          # source paper (already here)
+├── primal2.pdf                          # source paper
 ├── README.md
-├── docs/superpowers/specs/              # design docs
-├── logs/                                # dev log, training CSVs, screenshots
-├── checkpoints/                         # saved model states
+├── docs/
+│   ├── EVALUATION.md                    # results write-up
+│   ├── dev-log.md                       # narrative of the 5 training runs
+│   ├── images/                          # comparison chart, training curves, screenshot
+│   └── superpowers/specs/               # design doc
+├── checkpoints/
+│   └── primal2_final.pt                 # shipped trained model
 ├── primal2_toy/
 │   ├── env/         grid.py maze.py corridor.py lmapf.py
 │   ├── obs/         builder.py astar.py corridor_maps.py
 │   ├── expert/      prioritized_astar.py
 │   ├── policy/      network.py losses.py
 │   ├── train/       config.py trainer.py validity.py main.py
-│   └── eval/        rollout.py visualizer.py headless.py baselines.py monitor.py watchdog.py render_frame.py
+│   └── eval/        rollout.py visualizer.py headless.py baselines.py monitor.py watchdog.py render_frame.py compare.py comparison_plot.py plots.py
 ├── demo.py
 └── tests/                               # smoke tests for each module
 ```
+
+Training-time artifacts (`logs/`, intermediate checkpoints) are gitignored — regenerable by running the training loop.

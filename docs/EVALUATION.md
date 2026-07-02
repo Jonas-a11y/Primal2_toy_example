@@ -64,7 +64,7 @@ Five training attempts total; the ones that produced the shipped model:
   productive at ep 800), and reached **0.130** at ep 3800 — a further ~30 %
   improvement over run 3 alone. Selected as the shipped model.
 
-Iteration lessons captured in `logs/dev.md`:
+Iteration lessons captured in [`dev-log.md`](dev-log.md):
 
 - **Paper's entropy weight 0.01 is too low** for single-worker training —
   we bumped to 0.05 to prevent premature "stay-forever" convergence.
@@ -80,10 +80,10 @@ Iteration lessons captured in `logs/dev.md`:
 
 ## Figures
 
-- `logs/plot_FINAL.png` — bar chart of the four methods on 20 seeds.
-- `logs/plot_FINAL_run3_training.png` — loss / entropy / goals curves.
-- `logs/plot_FINAL_run3_eval.png` — held-out throughput over training episodes.
-- `logs/demo_frame_FINAL_seed42_sampled.png` — annotated demo screenshot.
+- [`images/comparison.png`](images/comparison.png) — bar chart of the four methods on 20 seeds.
+- [`images/training_curves.png`](images/training_curves.png) — loss / entropy / goals curves.
+- [`images/eval_over_training.png`](images/eval_over_training.png) — held-out throughput over training episodes.
+- [`images/demo_screenshot.png`](images/demo_screenshot.png) — annotated demo screenshot.
 
 ## Reproducing the numbers
 
