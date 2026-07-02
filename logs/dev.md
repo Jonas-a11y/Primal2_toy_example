@@ -130,3 +130,14 @@ Key qualitative claim reproduced: **learned policy never deadlocks** (min 0.055 
 
 `logs/EVALUATION.md` contains the full write-up with method scorecard, results, and reproduction commands. Committed to git.
 
+
+## 2026-07-02 03:50 – 05:47 — Run 4 (from-scratch retraining) as validation
+
+Ran a fresh training with all learnings baked in (no warm-start): seed=100, 4h budget. Got to ep ~7700. Final eval on 20 seeds:
+- Run 4 sampled: 0.086
+- Run 3 sampled: 0.102 (retained as shipped)
+
+Run 3 (warm-started from a partial-run 2 model) is meaningfully better than starting from scratch. The Adam optimizer state that carried over from run 2 gave better momentum despite the run-2 policy being incorrect (stay-heavy). Kept the run 3 ep 8800 checkpoint as `primal2_final.pt`.
+
+Insight: warm-starting a broken policy still gives faster training than fresh-init at this scale.
+
