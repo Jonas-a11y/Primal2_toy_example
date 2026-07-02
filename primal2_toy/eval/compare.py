@@ -26,7 +26,7 @@ def _resolve_device(spec: str) -> torch.device:
 
 
 def eval_learned(ckpt: str, device_spec: str, seeds: list[int], size: int, density: float,
-                 corridor_length: int, agents: int, steps: int) -> list[dict]:
+                 corridor_length: int, agents: int, steps: int, greedy: bool = True) -> list[dict]:
     device = _resolve_device(device_spec)
     obs_spec = ObsSpec(fov=11, n_pred=3)
     net = PolicyNet(
@@ -40,12 +40,12 @@ def eval_learned(ckpt: str, device_spec: str, seeds: list[int], size: int, densi
     results = []
     for seed in seeds:
         grid, task, corridors, cell_to_id = build_scenario(size, density, corridor_length, agents, seed)
-        rollout = Rollout(net, grid, task, corridors, cell_to_id, device, obs_spec, greedy=True)
+        rollout = Rollout(net, grid, task, corridors, cell_to_id, device, obs_spec, greedy=greedy)
         collisions = 0
         for _ in range(steps):
             _ = rollout.step()
         results.append({
-            "kind": "PRIMAL2 (learned)", "seed": seed,
+            "kind": "PRIMAL2 (learned)" if greedy else "PRIMAL2 (sampled)", "seed": seed,
             "agents": grid.n_agents, "steps": rollout.step_idx,
             "arrivals": rollout.total_arrivals,
             "throughput": rollout.total_arrivals / max(1, rollout.step_idx),
@@ -130,7 +130,7 @@ def as_markdown(summary: dict[str, dict], meta: dict) -> str:
     lines.append("")
     lines.append("| Method | Throughput (mean) | Throughput (min–max) | Total arrivals | Total steps |")
     lines.append("|---|---|---|---|---|")
-    order = ["PRIMAL2 (learned)", "greedy_astar", "random"]
+    order = ["PRIMAL2 (learned)", "PRIMAL2 (sampled)", "greedy_astar", "random"]
     for k in order:
         if k not in summary: continue
         s = summary[k]
@@ -158,9 +158,12 @@ def main() -> None:
     args = p.parse_args()
 
     results = []
-    print("running learned...")
+    print("running learned (greedy)...")
     results.extend(eval_learned(args.checkpoint, args.device, args.seeds, args.size, args.density,
-                                args.corridor_length, args.agents, args.steps))
+                                args.corridor_length, args.agents, args.steps, greedy=True))
+    print("running learned (sampled)...")
+    results.extend(eval_learned(args.checkpoint, args.device, args.seeds, args.size, args.density,
+                                args.corridor_length, args.agents, args.steps, greedy=False))
     print("running greedy_astar...")
     results.extend(eval_baseline("greedy_astar", args.seeds, args.size, args.density,
                                  args.corridor_length, args.agents, args.steps))

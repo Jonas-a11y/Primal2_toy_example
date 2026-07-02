@@ -20,7 +20,7 @@ def main() -> None:
     summary = data["summary"]
     meta = data["meta"]
 
-    order = ["random", "greedy_astar", "PRIMAL2 (learned)"]
+    order = ["random", "greedy_astar", "PRIMAL2 (learned)", "PRIMAL2 (sampled)"]
     order = [k for k in order if k in summary]
     means = [summary[k]["throughput_mean"] for k in order]
     mins = [summary[k]["throughput_min"] for k in order]
@@ -28,10 +28,17 @@ def main() -> None:
     lower_err = [m - lo for m, lo in zip(means, mins)]
     upper_err = [hi - m for m, hi in zip(means, maxs)]
 
-    fig, ax = plt.subplots(figsize=(7, 5))
+    color_map = {
+        "random": "#c9c9c9",
+        "greedy_astar": "#f5c518",
+        "PRIMAL2 (learned)": "#2e7dd7",
+        "PRIMAL2 (sampled)": "#8e44ad",
+    }
+    colors = [color_map[k] for k in order]
+
+    fig, ax = plt.subplots(figsize=(8, 5))
     x = np.arange(len(order))
-    bars = ax.bar(x, means, yerr=[lower_err, upper_err], capsize=6,
-                  color=["#c9c9c9", "#f5c518", "#2e7dd7"])
+    bars = ax.bar(x, means, yerr=[lower_err, upper_err], capsize=6, color=colors)
     ax.set_xticks(x)
     ax.set_xticklabels(order)
     ax.set_ylabel("throughput (arrivals / step)")

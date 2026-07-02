@@ -147,7 +147,7 @@ def run_demo(args) -> None:
         size=args.size, density=args.density, corridor_length=args.corridor_length,
         n_agents=args.agents, seed=args.seed,
     )
-    rollout = Rollout(net, grid, task, corridors, cell_to_id, device, obs_spec)
+    rollout = Rollout(net, grid, task, corridors, cell_to_id, device, obs_spec, greedy=args.greedy)
 
     pygame.init()
     pygame.display.set_caption("PRIMAL2 toy example")
@@ -193,7 +193,7 @@ def run_demo(args) -> None:
                         size=args.size, density=args.density, corridor_length=args.corridor_length,
                         n_agents=args.agents, seed=int(time.time()) & 0xFFFF,
                     )
-                    rollout = Rollout(net, grid, task, corridors, cell_to_id, device, obs_spec)
+                    rollout = Rollout(net, grid, task, corridors, cell_to_id, device, obs_spec, greedy=args.greedy)
                     selected_agent = 0
                 elif ev.key == pygame.K_PLUS or ev.key == pygame.K_EQUALS:
                     fps = min(60, fps + 1)
@@ -253,6 +253,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--fps", type=int, default=4)
     p.add_argument("--device", type=str, default="auto")
+    p.add_argument("--greedy", action="store_true",
+                   help="Use argmax actions instead of sampling from the policy distribution.")
     return p.parse_args()
 
 

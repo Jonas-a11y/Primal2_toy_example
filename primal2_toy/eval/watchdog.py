@@ -69,9 +69,16 @@ def main() -> None:
 
     device = _resolve_device(args.device)
     last_mtime = 0.0
+    best_tp = 0.0
     if not os.path.exists(args.out):
         with open(args.out, "w", newline="") as f:
             csv.writer(f).writerow(["wall_time", "episode", "throughput", "arrivals", "seeds", "steps_per_seed"])
+    else:
+        # Load best throughput to date.
+        with open(args.out) as f:
+            rows = list(csv.DictReader(f))
+        if rows:
+            best_tp = max(float(r["throughput"]) for r in rows)
     while True:
         try:
             mt = os.path.getmtime(args.ckpt)
@@ -88,7 +95,18 @@ def main() -> None:
         wall = time.time()
         with open(args.out, "a", newline="") as f:
             csv.writer(f).writerow([f"{wall:.1f}", ep, f"{tp:.4f}", arr, len(args.seeds), args.steps])
-        print(f"[wall={time.strftime('%H:%M:%S')}] ep={ep} throughput={tp:.4f} arrivals={arr}")
+        marker = ""
+        if tp > best_tp:
+            # Save a copy of the best-so-far checkpoint.
+            import shutil
+            best_path = "checkpoints/primal2_best.pt"
+            try:
+                shutil.copy(args.ckpt, best_path)
+                marker = f"  **NEW BEST** -> {best_path}"
+                best_tp = tp
+            except Exception as e:
+                marker = f"  (copy failed: {e})"
+        print(f"[wall={time.strftime('%H:%M:%S')}] ep={ep} throughput={tp:.4f} arrivals={arr}{marker}")
 
 
 if __name__ == "__main__":
