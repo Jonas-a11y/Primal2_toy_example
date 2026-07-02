@@ -163,3 +163,22 @@ Total training across all runs: run 2 (450 eps + 350 useful) + run 3 (~10,975 ep
 - Demo screenshots regenerated with the better model.
 - All test files still pass.
 - Repository clean.
+
+## 2026-07-02 07:18–07:51 — Run 6: another warm-start iteration
+
+Warm-started run 6 from run 5 ep 3800 with fresh optimizer. Reached ep 2350 in ~30 min. Best snapshot: ep 1600, 20-seed sampled throughput **0.140**. Marginal improvement over run 5 ep 3800 (0.133).
+
+Kept this as the definitive `primal2_final.pt`. Total lineage:
+- Run 2 (ep 0→800): initial IL warmup + broken RL. Contributed Adam state.
+- Run 3 (ep 800→10975): first fully successful training, warm-started from run 2. 
+- Run 5 (ep 8800→12600 equivalent): further warm-start, reached 0.133.
+- Run 6 (ep 12600→14200 equivalent): further warm-start, reached 0.140.
+
+Total effective training: ~16k episodes across ~5h wall-clock.
+
+## 2026-07-02 07:53 — Repository final state
+
+- Shipped model: `checkpoints/primal2_final.pt` (7.5x greedy A* on 20-seed benchmark).
+- All tests pass.
+- `logs/EVALUATION.md`, `README.md`, `logs/plot_FINAL.png`, `logs/demo_frame_FINAL_seed42_sampled.png` all updated.
+- Repository committed and clean.

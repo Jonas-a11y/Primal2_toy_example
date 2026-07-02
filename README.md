@@ -14,10 +14,10 @@ On a held-out benchmark of 20 seeds × 256 steps, 15×15 world, 30% density, cor
 | --- | ---:| ---:|
 | random | 0.006 | 0.3× |
 | greedy A* (independent) | 0.019 | 1.0× |
-| **PRIMAL2 (learned, greedy)** | **0.055** | **2.9×** |
-| **PRIMAL2 (learned, sampled)** | **0.130** | **7.0×** |
+| **PRIMAL2 (learned, greedy)** | **0.053** | **2.8×** |
+| **PRIMAL2 (learned, sampled)** | **0.140** | **7.5×** |
 
-The trained policy also **never deadlocks** — greedy A*'s worst seed gets 0 arrivals; PRIMAL2's worst gets 0.039.
+The trained policy also **never deadlocks** — greedy A*'s worst seed gets 0 arrivals; PRIMAL2's worst gets 0.059.
 
 See `logs/EVALUATION.md` for the full write-up.
 

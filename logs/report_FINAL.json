@@ -1,0 +1,713 @@
+{
+  "meta": {
+    "size": 15,
+    "density": 0.3,
+    "corridor_length": 5,
+    "agents": 6,
+    "steps": 256,
+    "seeds": [
+      7,
+      42,
+      123,
+      555,
+      2024,
+      8,
+      91,
+      314,
+      777,
+      1000,
+      33,
+      66,
+      200,
+      400,
+      800,
+      1234,
+      5678,
+      9101,
+      2222,
+      3333
+    ],
+    "checkpoint": "checkpoints/primal2_final.pt",
+    "ckpt_episode": 1600
+  },
+  "summary": {
+    "PRIMAL2 (learned)": {
+      "n_scenarios": 20,
+      "throughput_mean": 0.052734375,
+      "throughput_median": 0.041015625,
+      "throughput_min": 0.015625,
+      "throughput_max": 0.15625,
+      "arrivals_total": 270,
+      "steps_total": 5120
+    },
+    "PRIMAL2 (sampled)": {
+      "n_scenarios": 20,
+      "throughput_mean": 0.1404296875,
+      "throughput_median": 0.1484375,
+      "throughput_min": 0.05859375,
+      "throughput_max": 0.2109375,
+      "arrivals_total": 719,
+      "steps_total": 5120
+    },
+    "greedy_astar": {
+      "n_scenarios": 20,
+      "throughput_mean": 0.01875,
+      "throughput_median": 0.015625,
+      "throughput_min": 0.0,
+      "throughput_max": 0.0625,
+      "arrivals_total": 96,
+      "steps_total": 5120
+    },
+    "random": {
+      "n_scenarios": 20,
+      "throughput_mean": 0.005859375,
+      "throughput_median": 0.00390625,
+      "throughput_min": 0.0,
+      "throughput_max": 0.01953125,
+      "arrivals_total": 30,
+      "steps_total": 5120
+    }
+  },
+  "results": [
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 7,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 17,
+      "throughput": 0.06640625
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 42,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 4,
+      "throughput": 0.015625
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 123,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 7,
+      "throughput": 0.02734375
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 555,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 40,
+      "throughput": 0.15625
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 2024,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 6,
+      "throughput": 0.0234375
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 8,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 25,
+      "throughput": 0.09765625
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 91,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 22,
+      "throughput": 0.0859375
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 314,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 10,
+      "throughput": 0.0390625
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 777,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 8,
+      "throughput": 0.03125
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 1000,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 6,
+      "throughput": 0.0234375
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 33,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 7,
+      "throughput": 0.02734375
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 66,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 15,
+      "throughput": 0.05859375
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 200,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 16,
+      "throughput": 0.0625
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 400,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 11,
+      "throughput": 0.04296875
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 800,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 26,
+      "throughput": 0.1015625
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 1234,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 9,
+      "throughput": 0.03515625
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 5678,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 15,
+      "throughput": 0.05859375
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 9101,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 14,
+      "throughput": 0.0546875
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 2222,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 5,
+      "throughput": 0.01953125
+    },
+    {
+      "kind": "PRIMAL2 (learned)",
+      "seed": 3333,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 7,
+      "throughput": 0.02734375
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 7,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 25,
+      "throughput": 0.09765625
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 42,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 35,
+      "throughput": 0.13671875
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 123,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 45,
+      "throughput": 0.17578125
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 555,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 44,
+      "throughput": 0.171875
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 2024,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 16,
+      "throughput": 0.0625
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 8,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 42,
+      "throughput": 0.1640625
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 91,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 30,
+      "throughput": 0.1171875
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 314,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 45,
+      "throughput": 0.17578125
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 777,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 27,
+      "throughput": 0.10546875
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 1000,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 43,
+      "throughput": 0.16796875
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 33,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 51,
+      "throughput": 0.19921875
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 66,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 30,
+      "throughput": 0.1171875
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 200,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 24,
+      "throughput": 0.09375
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 400,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 35,
+      "throughput": 0.13671875
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 800,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 46,
+      "throughput": 0.1796875
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 1234,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 15,
+      "throughput": 0.05859375
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 5678,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 29,
+      "throughput": 0.11328125
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 9101,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 54,
+      "throughput": 0.2109375
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 2222,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 42,
+      "throughput": 0.1640625
+    },
+    {
+      "kind": "PRIMAL2 (sampled)",
+      "seed": 3333,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 41,
+      "throughput": 0.16015625
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 7,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 2,
+      "throughput": 0.0078125
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 42,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 3,
+      "throughput": 0.01171875
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 123,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 4,
+      "throughput": 0.015625
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 555,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 2,
+      "throughput": 0.0078125
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 2024,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 8,
+      "throughput": 0.03125
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 8,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 1,
+      "throughput": 0.00390625
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 91,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 4,
+      "throughput": 0.015625
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 314,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 7,
+      "throughput": 0.02734375
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 777,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 0,
+      "throughput": 0.0
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 1000,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 0,
+      "throughput": 0.0
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 33,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 5,
+      "throughput": 0.01953125
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 66,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 5,
+      "throughput": 0.01953125
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 200,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 3,
+      "throughput": 0.01171875
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 400,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 10,
+      "throughput": 0.0390625
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 800,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 6,
+      "throughput": 0.0234375
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 1234,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 7,
+      "throughput": 0.02734375
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 5678,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 16,
+      "throughput": 0.0625
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 9101,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 10,
+      "throughput": 0.0390625
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 2222,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 2,
+      "throughput": 0.0078125
+    },
+    {
+      "kind": "greedy_astar",
+      "seed": 3333,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 1,
+      "throughput": 0.00390625
+    },
+    {
+      "kind": "random",
+      "seed": 7,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 0,
+      "throughput": 0.0
+    },
+    {
+      "kind": "random",
+      "seed": 42,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 2,
+      "throughput": 0.0078125
+    },
+    {
+      "kind": "random",
+      "seed": 123,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 0,
+      "throughput": 0.0
+    },
+    {
+      "kind": "random",
+      "seed": 555,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 1,
+      "throughput": 0.00390625
+    },
+    {
+      "kind": "random",
+      "seed": 2024,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 2,
+      "throughput": 0.0078125
+    },
+    {
+      "kind": "random",
+      "seed": 8,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 3,
+      "throughput": 0.01171875
+    },
+    {
+      "kind": "random",
+      "seed": 91,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 0,
+      "throughput": 0.0
+    },
+    {
+      "kind": "random",
+      "seed": 314,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 0,
+      "throughput": 0.0
+    },
+    {
+      "kind": "random",
+      "seed": 777,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 0,
+      "throughput": 0.0
+    },
+    {
+      "kind": "random",
+      "seed": 1000,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 5,
+      "throughput": 0.01953125
+    },
+    {
+      "kind": "random",
+      "seed": 33,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 3,
+      "throughput": 0.01171875
+    },
+    {
+      "kind": "random",
+      "seed": 66,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 1,
+      "throughput": 0.00390625
+    },
+    {
+      "kind": "random",
+      "seed": 200,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 2,
+      "throughput": 0.0078125
+    },
+    {
+      "kind": "random",
+      "seed": 400,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 3,
+      "throughput": 0.01171875
+    },
+    {
+      "kind": "random",
+      "seed": 800,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 1,
+      "throughput": 0.00390625
+    },
+    {
+      "kind": "random",
+      "seed": 1234,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 1,
+      "throughput": 0.00390625
+    },
+    {
+      "kind": "random",
+      "seed": 5678,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 3,
+      "throughput": 0.01171875
+    },
+    {
+      "kind": "random",
+      "seed": 9101,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 2,
+      "throughput": 0.0078125
+    },
+    {
+      "kind": "random",
+      "seed": 2222,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 0,
+      "throughput": 0.0
+    },
+    {
+      "kind": "random",
+      "seed": 3333,
+      "agents": 6,
+      "steps": 256,
+      "arrivals": 1,
+      "throughput": 0.00390625
+    }
+  ]
+}

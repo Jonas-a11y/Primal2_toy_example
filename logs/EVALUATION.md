@@ -1,9 +1,9 @@
 # PRIMAL2 Toy Example — Final Evaluation Report
 
 **Deadline set:** 8 hours starting 2026-07-02 00:39 CEST (finish by ~08:46 CEST).
-**Effective training time:** ~4 h across three learning-eligible runs.
-**Best checkpoint:** `checkpoints/primal2_final.pt` (= run 5 ep 3800), 3800
-training episodes on top of a run-3 warm-start.
+**Effective training time:** ~5 h across four learning-eligible runs.
+**Best checkpoint:** `checkpoints/primal2_final.pt` — accumulated ~16k
+training episodes across three warm-starts (run 2 → run 3 → run 5 → run 6).
 
 ## Result headline
 
@@ -14,19 +14,19 @@ On a held-out benchmark of **20 random seeds × 256 steps** in
 | --- | ---:| ---:| ---:| ---:|
 | random                       | 0.006 | 0.000 | 0.020 | 0.3× |
 | greedy A* (independent)      | 0.019 | 0.000 | 0.063 | 1.0× |
-| **PRIMAL2 (learned, greedy)** | **0.055** | 0.004 | 0.117 | **2.9×** |
-| **PRIMAL2 (learned, sampled)** | **0.130** | 0.039 | 0.223 | **7.0×** |
+| **PRIMAL2 (learned, greedy)** | **0.053** | 0.016 | 0.156 | **2.8×** |
+| **PRIMAL2 (learned, sampled)** | **0.140** | 0.059 | 0.211 | **7.5×** |
 
 *Sampled* means action drawn from the softmax policy (masked to valid actions);
 *greedy* means the unmasked argmax. Both use the same trained network.
 
 **The key qualitative claim of the paper reproduces:** the learned policy
-**never deadlocks** — its worst seed still delivers 0.039 arrivals/step,
+**never deadlocks** — its worst seed still delivers 0.059 arrivals/step,
 whereas greedy A* fails outright on multiple seeds (throughput 0.000).
 This is exactly the corridor-deadlock failure mode that PRIMAL2's convention
 loss and A*-path/corridor observation channels are designed to prevent.
 
-The **max seed** (0.223) is 3.6× the *best* seed of the greedy A* baseline
+The **max seed** (0.211) is 3.3× the *best* seed of the greedy A* baseline
 (0.063), showing that when the environment gives room for it the learned
 policy exploits it much more effectively.
 
