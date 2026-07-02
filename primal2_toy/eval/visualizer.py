@@ -153,7 +153,11 @@ def run_demo(args) -> None:
 
     pygame.init()
     pygame.display.set_caption("PRIMAL2 toy example")
-    cell = 32
+    if args.cell > 0:
+        cell = args.cell
+    else:
+        # Auto-fit to a ~640 px main pane so bigger worlds still fit on screen.
+        cell = max(6, min(32, 640 // max(1, grid.w)))
     w_grid = grid.w * cell
     h_grid = grid.h * cell
     hud_h = 80
@@ -259,6 +263,8 @@ def parse_args() -> argparse.Namespace:
                    help="Use argmax actions instead of sampling from the policy distribution.")
     p.add_argument("--no-corridors", action="store_true",
                    help="Empty room, no obstacles at all (bypasses density/corridor-length).")
+    p.add_argument("--cell", type=int, default=0,
+                   help="Pixel size per grid cell. 0 (default) auto-fits to a ~640px pane so big worlds still fit.")
     return p.parse_args()
 
 
