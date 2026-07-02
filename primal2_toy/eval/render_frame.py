@@ -23,6 +23,7 @@ def main():
     p.add_argument("--steps", type=int, default=8)
     p.add_argument("--out", type=str, default="logs/demo_frame.png")
     p.add_argument("--device", type=str, default="cpu")
+    p.add_argument("--greedy", action="store_true")
     args = p.parse_args()
 
     pygame.init()
@@ -38,7 +39,7 @@ def main():
         args.size, args.density, args.corridor_length, args.agents, args.seed
     )
     dev = torch.device(args.device)
-    rollout = Rollout(net, grid, task, corridors, cell_to_id, dev, obs_spec)
+    rollout = Rollout(net, grid, task, corridors, cell_to_id, dev, obs_spec, greedy=args.greedy)
     for _ in range(args.steps):
         rollout.step()
 

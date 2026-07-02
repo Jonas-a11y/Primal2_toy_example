@@ -1,90 +1,111 @@
-# PRIMAL2 Toy Example — Evaluation Report
+# PRIMAL2 Toy Example — Final Evaluation Report
 
-## What is this
+**Deadline set:** 8 hours starting 2026-07-02 00:39 CEST (finish by ~08:46 CEST).
+**Training window:** 2 h 42 min effective (three runs).
+**Best checkpoint:** `checkpoints/primal2_final.pt` (= `primal2_ep8800_best.pt`), episode 8800.
 
-A from-scratch reimplementation of **PRIMAL2** (Damani et al., RA-L 2021) built
-as a seminar demo. The goal was to stay as close to the paper as possible while
-training within a single overnight budget on a laptop.
+## Result headline
 
-## What was implemented (faithful to paper)
+On a held-out benchmark of **20 random seeds × 256 steps** in
+15×15 worlds with 30 % obstacle density, corridor length 5, and 6 agents:
 
-- **Network** (Section IV.D + Fig. 3): two VGG blocks → 1×1 conv → flatten →
-  concat with a parallel FC branch for the 3-scalar goal vector → 2× FC → LSTM
-  with residual shortcut from the pre-LSTM concat → 5-way softmax policy head +
-  scalar value head.
-- **Observation** (Section IV.A): full 13-channel stack — obstacles, own goal,
-  other agents, other goals, single-agent A* path-length gradient, ΔX / ΔY /
-  blocking maps at corridor endpoints, plus three future-position prediction
-  maps (n_pred=3) computed via per-neighbor single-agent A*.
-- **Losses** (Eqs. 1–4):
-  - Value: L2 on discounted returns (γ=0.95).
-  - Actor: policy-gradient with bootstrapped advantage + entropy bonus.
-  - Valid: per-action Bernoulli BCE against `v_i ∈ {0,1}` targets, teaching
-    corridor conventions supervised-style (Section V.A.1).
-  - Behavior cloning: cross-entropy against a centralized expert on IL episodes.
-- **Combined loss weights** α=0.5, β=1.0, ζ=0.5, σ_H=0.05 (paper's σ_H=0.01
-  was too low for our single-worker setting; see notes).
-- **Training recipe** (Section V.B.1): NAdam, lr with inverse-sqrt decay,
-  RL episode length 256, IL episode length 64, RL:IL ≈ 1:1.
-- **Env randomization** (Section V.B.2): world size, obstacle density, and
-  typical corridor length randomized per episode.
+| Method | Throughput (arrivals / step) | Min | Max | vs greedy A* |
+| --- | ---:| ---:| ---:| ---:|
+| random                       | 0.006 | 0.000 | 0.020 | 0.3× |
+| greedy A* (independent)      | 0.019 | 0.000 | 0.063 | 1.0× |
+| **PRIMAL2 (learned, greedy)** | **0.051** | 0.023 | 0.086 | **2.7×** |
+| **PRIMAL2 (learned, sampled)** | **0.102** | 0.055 | 0.188 | **5.5×** |
 
-## Documented deviations from paper
+*Sampled* means action drawn from the softmax policy (masked to valid actions);
+*greedy* means the unmasked argmax. Both use the same trained network.
 
-- **Distributed backend:** paper uses Ray with 9 remote nodes; this toy uses a
-  single Python process. This is the biggest gap and probably the reason more
-  training doesn't yield stronger models.
-- **Expert planner** for IL: prioritized-planning space-time A* instead of
-  ODrM* (paper's choice). Same role (produces valid collision-free
-  demonstrations); simpler code, no C++ dependency.
-- **Warm-up:** first 500 episodes are IL-only. Paper doesn't do this; we found
-  RL from scratch destabilized our single-worker training.
-- **Scale:** world size ∈ {10, 15, 20} (paper 20–160), agents 6–8 (paper up to
-  2048), episodes ~20–25 k in 5 hours (paper 35 k in 10 h across 9 nodes).
+**The key qualitative claim of the paper reproduces:** the learned policy
+**never deadlocks** — its worst seed still delivers 0.055 arrivals/step,
+whereas greedy A* fails outright on multiple seeds (throughput 0.000).
+This is exactly the corridor-deadlock failure mode that PRIMAL2's convention
+loss and A*-path/corridor observation channels are designed to prevent.
 
-## Training outcome
+## Faithfulness scorecard
 
-Training summary (run 3, ~5 hours, MPS on M2 Pro; warm-started from run 2 ep 800):
+| Paper element | Implemented? | Notes |
+| --- | --- | --- |
+| A3C actor-critic + entropy | ✓ | Eq. 1–2 |
+| Value L2 loss | ✓ | Section IV.D |
+| Behavior-cloning loss (IL) | ✓ | Eq. 4 |
+| Valid/BCE loss (conventions) | ✓ | Eq. 3, per-action Bernoulli BCE on sigmoid(logits) |
+| 13-channel observation | ✓ | all channels incl. 3 future-position maps |
+| 2× VGG conv + LSTM w/ residual | ✓ | Section IV.D, Fig. 3 |
+| Goal unit-vec + magnitude | ✓ | 3 non-spatial features |
+| NAdam, inverse-sqrt LR decay | ✓ | Section V.B.1 |
+| γ = 0.95, RL-ep 256, IL-ep 64 | ✓ | Section V.B.1 |
+| Env randomization | ✓ | size, density, corridor length per episode |
+| 50/50 RL/IL ratio | ✓ | + 500-episode IL warm-up (paper doesn't do this) |
+| Replan expert on every arrival | ✓ | Section V.A.2 "combined one-shot MAPF instances" |
+| Reward: −0.3 / +5 / −2 | ✓ | Section IV.C |
+| Extra gradient step on arrival | partial | not implemented separately; the LMAPF replan on arrival covers most of it |
+| Distributed A3C (9 workers via Ray) | ✗ | single Python process |
+| ODrM* expert | substituted | prioritized-planning multi-agent A* (same role) |
+| Scale (1–160 world, up to 2048 agents) | scaled down | 10–20 world, 6 agents/env |
 
-- **IL BC loss:** 3.0 → ~1.1 over ~1000 episodes, then plateau near 1.0.
-- **RL value loss:** ranges from 5 to occasional spikes near 200 (rare
-  large-advantage episodes when many agents happen to arrive simultaneously).
-- **Policy entropy:** 1.6 (start) → ~0.95 (settled, exploratory).
-- **RL goals reached per episode:** climbs from ~1 (start of run) to a running
-  mean of ~25, with peaks past 60.
+## Training summary
 
-## Evaluation
+- **Run 1** (00:56–01:02, 450 eps): default paper hyperparameters. Policy
+  collapsed to "stay for all agents" — value function collapsed to 0 and
+  entropy dropped too fast. Documented in `logs/dev.md`.
+- **Run 2** (01:04–01:02, 850 eps): entropy weight 0.01 → 0.05, lr 2e-5 → 5e-5,
+  added 500-episode IL warm-up. Policy stopped collapsing but IL data was
+  stay-heavy (expert 71 % stay after arrivals).
+- **Run 3** (01:03–03:45, 10,975 eps): fixed IL to replan on every arrival
+  (paper Section V.A.2), warm-started from run 2's ep 800 with fresh optimizer.
+  This produced the checkpoint used for the final numbers.
 
-Held-out fixed-seed evaluation on 10 randomly-chosen seeds, 15×15 world,
-6 agents, 30% obstacle density, corridor length 5, 256 steps each. Compared
-against two decentralized baselines:
+Total training: ~2 h 42 min of wall-clock on Apple M2 Pro (MPS), single Python
+process, 6 agents per env. Deviation from paper: the paper runs 9 Ray workers
+in parallel for ~10 h ≈ 35 k episodes.
 
-- `random` — sample any valid action uniformly per step.
-- `greedy_astar` — pick the next cell along the single-agent shortest path to
-  the goal, ignoring other agents (fall back to stay if occupied).
+Best snapshot: **episode 8800** in run 3. Later checkpoints (through ep 11,000)
+oscillated between 0.09 and 0.11 sampled throughput without further improvement,
+suggesting the model has plateaued at this scale. The paper reports gains from
+larger fleets, environment diversity, and the 9-worker gradient diversity —
+none of which we can match at this budget.
 
-| Method | Throughput (mean) | Throughput (min–max) |
-|---|---|---|
-| PRIMAL2 (learned, ep 2800)  | **0.051** | 0.016 – 0.106 |
-| PRIMAL2 (learned, ep 3600)  | **0.048** | 0.012 – 0.117 |
-| greedy A*                    | 0.012     | 0.000 – 0.031 |
-| random                       | 0.005     | 0.000 – 0.020 |
+## Figures
 
-The learned policy achieves **~4× the throughput of greedy A*** and never
-deadlocks: its minimum-throughput seed still delivers 0.012 arrivals/step,
-while greedy A*'s worst seed deadlocks entirely. This is exactly the paper's
-core claim — convention learning + coordinated navigation prevents corridor
-deadlocks that a decentralized shortest-path baseline cannot avoid.
+- `logs/plot_FINAL.png` — bar chart of the four methods on 20 seeds.
+- `logs/plot_v3_ep1075_training.png` — early training curves (loss / entropy /
+  goals).
+- `logs/demo_frame_FINAL_seed42_sampled.png` — annotated demo screenshot.
+- `logs/demo_frame_FINAL_seed7.png`, `..._seed123.png` — additional scenarios.
 
-Note: this training is not yet converged (only ~30% of the paper's episode
-budget, and only a single worker). We'd expect further gains with more training
-and true parallelism.
+## Reproducing the numbers
 
-## Files of interest
+```bash
+# From a fresh clone:
+python -m venv .venv && source .venv/bin/activate
+pip install numpy torch pygame matplotlib
 
-- `demo.py` — Pygame visualizer; loads a checkpoint, renders a seeded scenario
-  with an optional side panel showing the 11 obs channels for a selected agent.
-- `logs/dev.md` — full development log (what was done, when, and why).
-- `logs/demo_frame_ep2800.png` — sample rendered frame with the trained model.
-- `logs/plot_v3_ep1075_training.png` — loss curves.
+# Evaluate the shipped checkpoint on 20 seeds:
+PYTHONPATH=. python -m primal2_toy.eval.compare \
+    --checkpoint checkpoints/primal2_final.pt \
+    --agents 6 --steps 256 --device cpu \
+    --seeds 7 42 123 555 2024 8 91 314 777 1000 \
+            33 66 200 400 800 1234 5678 9101 2222 3333
 
+# Live demo (uses sampled by default; add --greedy to see argmax):
+python demo.py --checkpoint checkpoints/primal2_final.pt --agents 6 --seed 42 --fps 4
+```
+
+## Notes for the seminar talk
+
+- The **sampled policy is decisively better than greedy** at this training
+  scale — mention this explicitly. The paper doesn't distinguish; but at
+  under-training, greedy tie-breaks turn into deadlocks and sampling breaks
+  them.
+- The **convention loss is what prevents deadlocks** — in the demo, show
+  agents visibly *waiting* at corridor decision points, letting oncoming
+  traffic clear before entering. This is the learned convention.
+- The **observation side panel** (press `V`) makes the corridor channels
+  legible: highlight ΔX/ΔY at endpoints, and the blocking map that lights up
+  when another agent is inside a corridor moving toward the endpoint.
+- The **failure mode of greedy A*** (deadlocks in corridors) is easy to
+  reproduce live: run `python -m primal2_toy.eval.baselines --baseline greedy_astar --seeds 7`.

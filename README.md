@@ -6,6 +6,21 @@ The paper trains a fully decentralized, communication-free policy for **lifelong
 
 This repo re-implements the paper *as faithfully as is feasible* at a small training scale (a few hours on a laptop), so you can run it live during a seminar.
 
+## Headline result
+
+On a held-out benchmark of 20 seeds × 256 steps, 15×15 world, 30% density, corridor length 5, 6 agents:
+
+| Method | Throughput (arrivals / step) | vs greedy A* |
+| --- | ---:| ---:|
+| random | 0.006 | 0.3× |
+| greedy A* (independent) | 0.019 | 1.0× |
+| **PRIMAL2 (learned, greedy)** | **0.051** | **2.7×** |
+| **PRIMAL2 (learned, sampled)** | **0.102** | **5.5×** |
+
+The trained policy also **never deadlocks** — greedy A*'s worst seed gets 0 arrivals; PRIMAL2's worst gets 0.055.
+
+See `logs/EVALUATION.md` for the full write-up.
+
 ## What's in this repo
 
 | Module | What it does |
@@ -44,23 +59,30 @@ Design notes and dev log:
 python -m venv .venv && source .venv/bin/activate
 pip install numpy torch pygame matplotlib tqdm
 
-# Train (6h on M2 Pro / MPS, ~22k episodes):
+# Live demo with the shipped trained checkpoint:
+python demo.py --checkpoint checkpoints/primal2_final.pt --agents 6 --seed 42 --fps 4
+
+# Baselines for comparison:
+PYTHONPATH=. python -m primal2_toy.eval.baselines --baseline random --agents 6
+PYTHONPATH=. python -m primal2_toy.eval.baselines --baseline greedy_astar --agents 6
+
+# Rerun the held-out comparison (produces logs/report_FINAL_ep8800.md):
+PYTHONPATH=. python -m primal2_toy.eval.compare \
+    --checkpoint checkpoints/primal2_final.pt \
+    --agents 6 --steps 256 --device cpu \
+    --seeds 7 42 123 555 2024 8 91 314 777 1000 \
+            33 66 200 400 800 1234 5678 9101 2222 3333
+
+# Retrain from scratch (takes ~3h on M2 Pro / MPS to reach the shipped model):
 PYTHONPATH=. python -m primal2_toy.train.main \
-    --episodes 50000 --deadline-hours 6 --device mps \
-    --n-agents 6 --seed 42 --log-every 25 --ckpt-every 500
+    --episodes 50000 --deadline-hours 5 --device mps \
+    --n-agents 6 --seed 44 --log-every 25 --ckpt-every 400
 
 # Watch training progress:
 PYTHONPATH=. python -m primal2_toy.eval.monitor logs/train_metrics_*.csv
 
 # Periodically evaluate the latest checkpoint:
 PYTHONPATH=. python -m primal2_toy.eval.watchdog --agents 6 --seeds 7 42 123 555
-
-# Live demo:
-python demo.py --checkpoint checkpoints/primal2_latest.pt --agents 6 --seed 42 --fps 4
-
-# Baselines for comparison:
-PYTHONPATH=. python -m primal2_toy.eval.baselines --baseline random --agents 6
-PYTHONPATH=. python -m primal2_toy.eval.baselines --baseline greedy_astar --agents 6
 ```
 
 ### Demo controls

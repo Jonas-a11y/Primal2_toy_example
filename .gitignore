@@ -1,7 +1,10 @@
 .venv/
 __pycache__/
 *.pyc
-checkpoints/
+checkpoints/*.pt
+!checkpoints/primal2_final.pt
 logs/*.log
-logs/*.csv
+logs/train_metrics_*.csv
+logs/eval_over_time.csv
 !logs/dev.md
+!logs/EVALUATION.md
