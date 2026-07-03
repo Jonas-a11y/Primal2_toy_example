@@ -85,6 +85,57 @@ PYTHONPATH=. python -m primal2_toy.train.main \
     --n-agents 6 --seed 44 --log-every 25 --ckpt-every 400
 ```
 
+## Reproducing the paper's PRIMAL2 numbers
+
+The shipped checkpoint was trained on small worlds only (10-20, 6 agents). To
+recreate the paper's Fig. 4 / Fig. 5 (PRIMAL2 line only) you need to (a) train
+on the paper's wider env randomization and (b) sweep the same axes at eval time.
+
+### 1. Retrain with the paper's env-randomization ranges
+
+Paper Section V.B.2: sizes 10-70, obstacle density 0.2-0.7, typical corridor
+length 3-21. Enable with `--paper-ranges`:
+
+```bash
+PYTHONPATH=. python -m primal2_toy.train.main \
+    --paper-ranges --n-agents 8 --device cuda \
+    --episodes 35000 --seed 42 --log-every 50 --ckpt-every 1000
+```
+
+Wall-clock is ~10 h on a modern GPU. Consider `--num-workers` (WIP) or
+warm-starting from the shipped checkpoint (`--warmstart-weights checkpoints/primal2_final.pt`)
+if you want a faster path.
+
+### 2. Sweep the paper's evaluation grid
+
+Fig. 5 (LMAPF throughput vs. team size):
+
+```bash
+PYTHONPATH=. python -m primal2_toy.eval.sweep \
+    --checkpoint checkpoints/primal2_paper_ranges.pt \
+    --out logs/sweep_lmapf.csv --mode lmapf \
+    --sizes 20 40 80 --densities 0.3 --corridors 10 \
+    --team-sizes 4 8 16 32 64 128 --n-seeds 10 --device cuda
+PYTHONPATH=. python -m primal2_toy.eval.sweep_plots \
+    --sweep-csv logs/sweep_lmapf.csv --out docs/images/sweep
+```
+
+Fig. 4 (one-shot success rate + path length):
+
+```bash
+PYTHONPATH=. python -m primal2_toy.eval.sweep \
+    --checkpoint checkpoints/primal2_paper_ranges.pt \
+    --out logs/sweep_oneshot.csv --mode oneshot \
+    --sizes 20 40 --densities 0.3 --corridors 10 \
+    --team-sizes 4 8 16 32 64 128 --n-seeds 10 --device cuda
+PYTHONPATH=. python -m primal2_toy.eval.sweep_plots \
+    --sweep-csv logs/sweep_oneshot.csv --out docs/images/sweep_oneshot
+```
+
+The paper uses 50 seeds per config. Scale `--n-seeds` to your compute budget.
+Timestep budgets default to the paper's per-size values (Section VI.A/B). Add
+`--greedy` to use argmax actions; sampled (default) is usually stronger.
+
 ### Demo controls
 
 - `SPACE` — pause/resume
