@@ -8,6 +8,11 @@ logs/
 checkpoints/*.pt
 !checkpoints/primal2_final.pt
 
+# Seminar working files — kept local, not published with the code repo.
+seminar/
+seminar_01.pdf
+seminar_02.pdf
+
 # Editor / OS junk.
 .DS_Store
 .idea/
