@@ -182,3 +182,64 @@ Total effective training: ~16k episodes across ~5h wall-clock.
 - All tests pass.
 - `logs/EVALUATION.md`, `README.md`, `logs/plot_FINAL.png`, `logs/demo_frame_FINAL_seed42_sampled.png` all updated.
 - Repository committed and clean.
+
+## 2026-07-04 12:50–22:51 — Session 2: paper-adjacent retraining
+
+Ten-hour warm-started run on the M2 Pro. Config:
+
+- Sizes ∈ {20, 30, 40} (Session 1 used {10, 15, 20}), density 0.3–0.5,
+  corridor length ∈ {5, 10, 15}, **8 agents** per env (up from 6).
+- Warm-start from Session-1 `primal2_final.pt`, fresh optimizer.
+- 200-episode IL re-warmup (short, because the policy is already reasonable).
+- Everything else unchanged: lr 5e-5, entropy 0.05, γ = 0.95, α/β/ζ = 0.5/1/0.5.
+
+Trainer's deadline handler cleanly terminated at ep 25 445 (~73 % of the
+paper's 35 k budget). Ø 1.42 s/episode — faster than pre-flight projection
+because the BFS cache inside each episode hits well even on 40×40.
+
+Watchdog on 20×20 / 30 % / corridor 10 / 8 agents (a config the Session-1
+model had never seen at training end):
+
+| Episode | Sampled throughput |
+|---:|---:|
+| 500 | 0.152 |
+| 2 500 | 0.186 |
+| 10 000 | 0.19–0.21 |
+| 20 000 | 0.193 |
+| 22 500 | 0.217 |
+| **25 000** | **0.236** ← peak |
+| 25 445 | 0.170 (last snapshot, single-eval noise) |
+
+Full 20-seed evaluation on ep 25 445 promoted to shipped model:
+
+- 15×15 / 6 agents: sampled 0.208 (Session 1 shipped 0.140 → +48 %).
+- 20×20 / 8 agents: sampled 0.228 (never seen at Session-1 end).
+- Worst-seed throughput ≥ 0.109 on 20×20 and ≥ 0.129 on 15×15 — the
+  never-deadlock property holds across configurations.
+
+Session-1 shipped checkpoint archived as `checkpoints/primal2_toy_15x15.pt`.
+
+## 2026-07-05 00:20–XX:XX — Post-training sweeps and paper-figure reproduction
+
+While the Mac was still fresh from Session 2, ran both paper-shaped sweeps
+head-to-head on the shipped model.
+
+**Fig-5 sweep (LMAPF).** 3 sizes × 6 team sizes × 5 seeds = 90 instances,
+~6 min wall-clock. Results in `logs/sweep_optB_fig5.csv`; plot at
+`docs/images/fig5_lmapf.png`. Throughput monotonically rises with team size
+until each world saturates:
+- 20×20 saturates at 32 agents (0.53), collapses at 128 (0.19, world full).
+- 30×30 saturates at 64 agents (0.78).
+- 40×40 still climbing at 128 agents (peak 1.09).
+
+**Fig-4 sweep (one-shot).** 2 sizes × 5 team sizes × 5 seeds, ~4 min. Success
+rate falls with team size, 40×40 holds up to 16 agents at 0.8, 32 at 0.4,
+64 at 0. Path length stays stable ~25–40 across the successful bracket.
+Files: `logs/sweep_optB_fig4.csv`, `docs/images/fig4_{success,pathlen}.png`.
+
+Both plots match the paper's Fig. 4 / Fig. 5 in shape but obviously not in
+absolute team-size scale (paper: up to 2048; here: up to 128).
+
+Ch5 of the seminar draft rewritten with the new two-config table.
+`README.md` and `docs/EVALUATION.md` updated with the new headline numbers
+and the two new figures.

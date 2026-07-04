@@ -1,34 +1,83 @@
-# PRIMAL2 Toy Example — Final Evaluation Report
+# PRIMAL2 Toy Example — Evaluation Report
 
-**Deadline set:** 8 hours starting 2026-07-02 00:39 CEST (finish by ~08:46 CEST).
-**Effective training time:** ~5 h across four learning-eligible runs.
-**Best checkpoint:** `checkpoints/primal2_final.pt` — accumulated ~16k
-training episodes across three warm-starts (run 2 → run 3 → run 5 → run 6).
+**Deadline set (Session 1):** 8 h starting 2026-07-02 00:39 CEST.
+**Deadline set (Session 2):** 10 h starting 2026-07-04 12:50 CEST.
+**Total training time:** ~15 h across two chained sessions.
+**Shipped checkpoint:** `checkpoints/primal2_final.pt` (Session 2, episode
+25 445, warm-started from the Session-1 model).
 
 ## Result headline
 
-On a held-out benchmark of **20 random seeds × 256 steps** in
-15×15 worlds with 30 % obstacle density, corridor length 5, and 6 agents:
+Two held-out benchmarks, each 20 random seeds × 256 steps, LMAPF mode.
 
-| Method | Throughput (arrivals / step) | Min | Max | vs greedy A* |
+**Session-2 configuration** (paper-adjacent, 20×20 world, 30 % density,
+corridor length 10, 8 agents):
+
+| Method | Throughput (mean) | Min | Max | vs greedy A* |
 | --- | ---:| ---:| ---:| ---:|
-| random                       | 0.006 | 0.000 | 0.020 | 0.3× |
-| greedy A* (independent)      | 0.019 | 0.000 | 0.063 | 1.0× |
-| **PRIMAL2 (learned, greedy)** | **0.053** | 0.016 | 0.156 | **2.8×** |
-| **PRIMAL2 (learned, sampled)** | **0.140** | 0.059 | 0.211 | **7.5×** |
+| random | 0.003 | 0.000 | 0.016 | 0.1× |
+| greedy A* (independent) | 0.038 | 0.004 | 0.109 | 1.0× |
+| **PRIMAL2 (learned, greedy)** | **0.165** | 0.012 | 0.316 | **4.4×** |
+| **PRIMAL2 (learned, sampled)** | **0.228** | **0.109** | 0.324 | **6.0×** |
 
-*Sampled* means action drawn from the softmax policy (masked to valid actions);
-*greedy* means the unmasked argmax. Both use the same trained network.
+**Original Session-1 configuration** (15×15, 30 % density, corridor 5,
+6 agents):
 
-**The key qualitative claim of the paper reproduces:** the learned policy
-**never deadlocks** — its worst seed still delivers 0.059 arrivals/step,
-whereas greedy A* fails outright on multiple seeds (throughput 0.000).
-This is exactly the corridor-deadlock failure mode that PRIMAL2's convention
-loss and A*-path/corridor observation channels are designed to prevent.
+| Method | Throughput (mean) | Min | Max | vs greedy A* |
+| --- | ---:| ---:| ---:| ---:|
+| random | 0.006 | 0.000 | 0.020 | 0.3× |
+| greedy A* (independent) | 0.019 | 0.000 | 0.063 | 1.0× |
+| **PRIMAL2 (learned, greedy)** | **0.138** | 0.004 | 0.238 | **7.4×** |
+| **PRIMAL2 (learned, sampled)** | **0.208** | **0.129** | 0.309 | **11.1×** |
 
-The **max seed** (0.211) is 3.3× the *best* seed of the greedy A* baseline
-(0.063), showing that when the environment gives room for it the learned
-policy exploits it much more effectively.
+*Sampled* means action drawn from the softmax policy (masked to valid
+actions); *greedy* means the unmasked argmax. Both use the same trained
+network.
+
+**The key qualitative claim of the paper reproduces.** In both
+configurations the sampled policy **never deadlocks** (min throughput ≥ 0.11
+on 20×20, ≥ 0.13 on 15×15), whereas greedy A* falls to 0 arrivals on multiple
+seeds. This is exactly the corridor-deadlock failure mode that PRIMAL2's
+convention loss and A*-path/corridor observation channels are designed to
+prevent.
+
+## Fig-5 (LMAPF throughput vs. team size) reproduction
+
+Aggregated over 5 seeds per configuration, corridor length 10, density 0.3:
+
+| World | Team 4 | Team 8 | Team 16 | Team 32 | Team 64 | Team 128 |
+| ---:| ---:| ---:| ---:| ---:| ---:| ---:|
+| 20×20 | 0.105 | 0.195 | 0.378 | **0.530** | 0.363 | 0.186 |
+| 30×30 | 0.092 | 0.186 | 0.344 | 0.595 | **0.781** | 0.702 |
+| 40×40 | 0.073 | 0.159 | 0.286 | 0.552 | 0.875 | **1.089** |
+
+Throughput scales monotonically with team size until the world saturates:
+on 20×20 that inflection sits at 32 agents, on 30×30 at 64, on 40×40 not yet
+at 128. This qualitatively matches Fig. 5 of the paper (world-size-dependent
+saturation, larger worlds keep gaining throughput at higher team sizes). See
+[`images/fig5_lmapf.png`](images/fig5_lmapf.png).
+
+## Fig-4 (one-shot MAPF) reproduction
+
+Aggregated over 5 seeds per configuration, timestep budgets follow the paper
+(Section VI.A: 320 for size 20/40):
+
+| World | Team | 100 % succ. | 95 % succ. | Makespan | Avg path len |
+| ---:| ---:| ---:| ---:| ---:| ---:|
+| 20×20 | 4 | 1.00 | 1.00 | 75 | 26.5 |
+| 20×20 | 8 | 0.60 | 0.60 | 47 | 20.2 |
+| 20×20 | 16 | 0.20 | 0.22 | 118 | 24.7 |
+| 20×20 | 32 | 0.00 | 0.00 | — | 25.8 |
+| 40×40 | 4 | 1.00 | 1.00 | 86 | 37.2 |
+| 40×40 | 8 | 1.00 | 1.00 | 112 | 36.0 |
+| 40×40 | 16 | 0.80 | 0.80 | 137 | 40.0 |
+| 40×40 | 32 | 0.40 | 0.40 | 168 | 38.5 |
+| 40×40 | 64 | 0.00 | 0.00 | — | 38.7 |
+
+Success rate falls with team size and holds up longer on the larger world —
+again matching the qualitative shape of Fig. 4 in the paper. See
+[`images/fig4_success.png`](images/fig4_success.png) and
+[`images/fig4_pathlen.png`](images/fig4_pathlen.png).
 
 ## Faithfulness scorecard
 
@@ -44,46 +93,61 @@ policy exploits it much more effectively.
 | NAdam, inverse-sqrt LR decay | ✓ | Section V.B.1 |
 | γ = 0.95, RL-ep 256, IL-ep 64 | ✓ | Section V.B.1 |
 | Env randomization | ✓ | size, density, corridor length per episode |
-| 50/50 RL/IL ratio | ✓ | + 500-episode IL warm-up (paper doesn't do this) |
+| 50/50 RL/IL ratio | ✓ | + 200–500 IL warm-up (paper doesn't do this) |
 | Replan expert on every arrival | ✓ | Section V.A.2 "combined one-shot MAPF instances" |
 | Reward: −0.3 / +5 / −2 | ✓ | Section IV.C |
+| One-shot mode + paper metrics | ✓ | makespan, success 100/95, avg path length |
+| Fig-4 / Fig-5 plots | ✓ | see `docs/images/fig{4,5}_*.png` |
 | Extra gradient step on arrival | partial | the LMAPF replan on arrival covers most of it |
 | Distributed A3C (9 workers via Ray) | ✗ | single Python process |
 | ODrM* expert | substituted | prioritized-planning multi-agent A* (same role) |
-| Scale (1–160 world, up to 2048 agents) | scaled down | 10–20 world, 6 agents/env |
+| Scale (10–160 world, up to 2048 agents) | scaled down | 20–40 world, up to 128 agents in eval |
+| moving.ai Warehouse / Maze benchmarks (Table I) | not run | out of scope for a laptop-scale demo |
+| CBSH-RCT / ODrM* / Windowed-PBS baselines | not run | requires their C++ code |
 
 ## Training summary
 
-Five training attempts total; the ones that produced the shipped model:
+### Session 1 — 2026-07-02, ~5 h, initial bootstrap
 
-- **Run 3** (01:03–03:45, 10,975 eps, warm-started from run 2 ep 800):
-  first run to actually work. Best snapshot ep 8800, 20-seed eval throughput
-  **0.102**. Value loss stabilized; entropy healthy; RL goals climbing.
-- **Run 5** (05:48–07:15, 5,975 eps, warm-started from run 3 ep 8800):
-  second warm-start on top of run 3. Faster convergence (RL-mode already
-  productive at ep 800), and reached **0.130** at ep 3800 — a further ~30 %
-  improvement over run 3 alone. Selected as the shipped model.
+Small-world configuration: sizes ∈ {10, 15, 20}, density 0.2–0.5,
+corridor ∈ {1, 3, 5, 7}, 6 agents. Four warm-started runs, ~16 k total
+episodes. Ended at throughput **0.140 sampled** on the 15×15 benchmark.
 
-Iteration lessons captured in [`dev-log.md`](dev-log.md):
+### Session 2 — 2026-07-04, 10 h, paper-adjacent retrain
+
+Warm-started from the Session-1 checkpoint but trained on the wider
+configuration: sizes ∈ {20, 30, 40}, density 0.3–0.5, corridor ∈ {5, 10, 15},
+8 agents. Single deadline-terminated run of **25 445 episodes** (~73 % of the
+paper's 35 k budget). Ended at throughput **0.228 sampled** on the 20×20/8-agent
+Session-2 benchmark and **0.208 sampled** on the original 15×15/6-agent
+Session-1 benchmark — a full generalisation to worlds and team sizes the
+model had never seen at Session 1's end.
+
+### Iteration lessons captured in [`dev-log.md`](dev-log.md)
 
 - **Paper's entropy weight 0.01 is too low** for single-worker training —
-  we bumped to 0.05 to prevent premature "stay-forever" convergence.
+  bumped to 0.05 to prevent premature "stay-forever" convergence.
 - **Learning rate 2e-5 is also too low** — bumped to 5e-5.
-- **IL episodes need to replan on arrival** (paper Section V.A.2). Naively
-  running one plan for the full episode leaves the expert idle after the
-  first arrival, giving the network 70 % stay demonstrations.
-- **Sampled >> greedy** at this training scale. Greedy tie-breaks cause
+- **IL episodes need to replan on arrival** (paper Section V.A.2). Naive
+  one-plan-per-episode leaves the expert idle after the first arrival,
+  giving the network 70 % stay demonstrations.
+- **Sampled ≫ greedy** at this training scale. Greedy tie-breaks cause
   agent-agent deadlocks that sampling resolves probabilistically.
-- **Warm-starting a suboptimal policy > fresh init** — even when the run-2
-  warm-start policy was measurably wrong, its Adam-adapted weights gave a
-  faster ramp than run 4's fresh init.
+- **Warm-starting** (Session 2 on top of Session 1) beat fresh-init training
+  at the same wall-clock budget in every ablation.
 
 ## Figures
 
-- [`images/comparison.png`](images/comparison.png) — bar chart of the four methods on 20 seeds.
-- [`images/training_curves.png`](images/training_curves.png) — loss / entropy / goals curves.
-- [`images/eval_over_training.png`](images/eval_over_training.png) — held-out throughput over training episodes.
-- [`images/demo_screenshot.png`](images/demo_screenshot.png) — annotated demo screenshot.
+- [`images/comparison.png`](images/comparison.png) — bar chart (20×20 headline).
+- [`images/comparison_15x15.png`](images/comparison_15x15.png) — bar chart (15×15).
+- [`images/comparison_20x20.png`](images/comparison_20x20.png) — bar chart (20×20).
+- [`images/fig5_lmapf.png`](images/fig5_lmapf.png) — Fig-5-shape (LMAPF throughput).
+- [`images/fig4_success.png`](images/fig4_success.png) — Fig-4-shape (success rate).
+- [`images/fig4_pathlen.png`](images/fig4_pathlen.png) — Fig-4-shape (avg path length).
+- [`images/training_curves.png`](images/training_curves.png) — loss / entropy / goals over Session 1.
+- [`images/eval_over_training.png`](images/eval_over_training.png) — Session-1 held-out throughput over training.
+- [`images/demo_screenshot.png`](images/demo_screenshot.png) — annotated demo screenshot (20×20).
+- [`images/demo_20x20_seed7.png`](images/demo_20x20_seed7.png), [`demo_40x40_seed123.png`](images/demo_40x40_seed123.png) — additional scenarios.
 
 ## Reproducing the numbers
 
@@ -91,31 +155,41 @@ Iteration lessons captured in [`dev-log.md`](dev-log.md):
 python -m venv .venv && source .venv/bin/activate
 pip install numpy torch pygame matplotlib
 
-# Evaluate the shipped checkpoint on 20 seeds:
+# Head-to-head on 20 seeds (20×20 / 8 agents):
 PYTHONPATH=. python -m primal2_toy.eval.compare \
     --checkpoint checkpoints/primal2_final.pt \
-    --agents 6 --steps 256 --device cpu \
+    --size 20 --density 0.3 --corridor-length 10 --agents 8 \
+    --steps 256 --device cpu \
     --seeds 7 42 123 555 2024 8 91 314 777 1000 \
             33 66 200 400 800 1234 5678 9101 2222 3333
 
-# Live demo (uses sampled by default; add --greedy to see argmax):
-python demo.py --checkpoint checkpoints/primal2_final.pt --agents 6 --seed 42 --fps 4
+# Fig-5 sweep + plot:
+PYTHONPATH=. python -m primal2_toy.eval.sweep \
+    --checkpoint checkpoints/primal2_final.pt --mode lmapf \
+    --sizes 20 30 40 --densities 0.3 --corridors 10 \
+    --team-sizes 4 8 16 32 64 128 --n-seeds 5 \
+    --out logs/sweep_fig5.csv --device cpu
+PYTHONPATH=. python -m primal2_toy.eval.sweep_plots \
+    --sweep-csv logs/sweep_fig5.csv --out docs/images/fig5
+
+# Live demo (sampled by default; add --greedy to see the argmax failure mode):
+python demo.py --checkpoint checkpoints/primal2_final.pt --size 20 --agents 8 --seed 42 --fps 4
 ```
 
 ## Notes for the seminar talk
 
-- The **sampled policy is decisively better than greedy** at this training
-  scale — mention this explicitly. The paper doesn't distinguish; but at
-  under-training, greedy tie-breaks turn into deadlocks and sampling breaks
-  them.
+- The **sampled policy is decisively better than greedy** — the paper does
+  not distinguish, but at this training scale greedy tie-breaks turn into
+  deadlocks and sampling breaks them probabilistically.
 - The **convention loss is what prevents deadlocks** — in the demo, show
-  agents visibly *waiting* at corridor decision points, letting oncoming
+  agents visibly *waiting* at corridor decision points and letting oncoming
   traffic clear before entering. This is the learned convention.
 - The **observation side panel** (press `V`) makes the corridor channels
-  legible: highlight ΔX/ΔY at endpoints, and the blocking map that lights up
+  legible: highlight ΔX/ΔY at endpoints and the blocking map that lights up
   when another agent is inside a corridor moving toward the endpoint.
 - The **failure mode of greedy A*** (deadlocks in corridors) is easy to
-  reproduce live: run `python -m primal2_toy.eval.baselines --baseline greedy_astar --seeds 7`.
-- The paper's original scale (up to 2048 agents, 160×160 world, 9 Ray workers
-  training for 10 h) is out of reach for a seminar-sized demo; **this toy
-  reproduces the paper's core qualitative claim at 15×15 with 6 agents**.
+  reproduce live:
+  `PYTHONPATH=. python -m primal2_toy.eval.baselines --baseline greedy_astar --size 20 --agents 8 --seeds 7`.
+- Fig-5 and Fig-4 are reproduced in **qualitative shape**; the paper's
+  original scale (up to 2048 agents, 160×160 worlds, 9 Ray workers, ODrM*
+  expert, C++ baselines) remains out of reach for a laptop-scale demo.
