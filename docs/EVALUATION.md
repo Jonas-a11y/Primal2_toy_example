@@ -43,19 +43,20 @@ prevent.
 
 ## Fig-5 (LMAPF throughput vs. team size) reproduction
 
-Aggregated over 5 seeds per configuration, corridor length 10, density 0.3:
+Aggregated over 10 seeds per configuration, corridor length 10, density 0.3:
 
 | World | Team 4 | Team 8 | Team 16 | Team 32 | Team 64 | Team 128 |
 | ---:| ---:| ---:| ---:| ---:| ---:| ---:|
-| 20×20 | 0.105 | 0.195 | 0.378 | **0.530** | 0.363 | 0.186 |
-| 30×30 | 0.092 | 0.186 | 0.344 | 0.595 | **0.781** | 0.702 |
-| 40×40 | 0.073 | 0.159 | 0.286 | 0.552 | 0.875 | **1.089** |
+| 20×20 | 0.123 | 0.223 | 0.311 | **0.429** | 0.373 | 0.205 |
+| 30×30 | 0.072 | 0.159 | 0.320 | 0.508 | 0.714 | **0.768** |
+| 40×40 | 0.067 | 0.154 | 0.280 | 0.528 | 0.791 | **1.095** |
 
 Throughput scales monotonically with team size until the world saturates:
-on 20×20 that inflection sits at 32 agents, on 30×30 at 64, on 40×40 not yet
-at 128. This qualitatively matches Fig. 5 of the paper (world-size-dependent
-saturation, larger worlds keep gaining throughput at higher team sizes). See
-[`images/fig5_lmapf.png`](images/fig5_lmapf.png).
+on 20×20 that inflection sits at 32 agents (peak 0.43), on 30×30 it
+continues climbing through 128 (0.77), on 40×40 it is still rising at
+128 agents (1.09). This qualitatively matches Fig. 5 of the paper
+(world-size-dependent saturation, larger worlds keep gaining throughput at
+higher team sizes). See [`images/fig5_lmapf.png`](images/fig5_lmapf.png).
 
 ## Fig-4 (one-shot MAPF) reproduction
 
