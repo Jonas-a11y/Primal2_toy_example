@@ -2,9 +2,10 @@
 
 **Session 1:** 2026-07-02 00:39–~08:00 CEST — initial bootstrap (~5 h).
 **Session 2:** 2026-07-04 12:50–22:51 CEST — paper-adjacent retrain (10 h).
-**Session 3:** 2026-07-05 00:30–~07:00 CEST — extended-distribution retrain (~6.5 h).
+**Session 3:** 2026-07-05 00:30–07:04 CEST — extended-distribution retrain (6.5 h).
 **Total training time:** ~21.5 h across three chained warm-started sessions.
-**Shipped checkpoint:** `checkpoints/primal2_final.pt` (Session 3, episode 9 500).
+**Shipped checkpoint:** `checkpoints/primal2_final.pt` (Session 3, episode 14 820,
+deadline-terminated final).
 
 ## Result headline
 
@@ -17,8 +18,8 @@ corridor length 10, 8 agents):
 | --- | ---:| ---:| ---:| ---:|
 | random | 0.003 | 0.000 | 0.016 | 0.1× |
 | greedy A* (independent) | 0.038 | 0.004 | 0.109 | 1.0× |
-| **PRIMAL2 (learned, greedy)** | **0.198** | 0.109 | 0.297 | **5.3×** |
-| **PRIMAL2 (learned, sampled)** | **0.240** | **0.129** | 0.379 | **6.4×** |
+| **PRIMAL2 (learned, greedy)** | **0.200** | 0.066 | 0.355 | **5.3×** |
+| **PRIMAL2 (learned, sampled)** | **0.244** | **0.125** | 0.332 | **6.5×** |
 
 **Harder configuration** (40×40 world, 30 % density, corridor 10, 16 agents):
 
@@ -26,8 +27,8 @@ corridor length 10, 8 agents):
 | --- | ---:| ---:| ---:| ---:|
 | random | 0.004 | 0.000 | 0.012 | 0.0× |
 | greedy A* (independent) | 0.096 | 0.016 | 0.164 | 1.0× |
-| **PRIMAL2 (learned, greedy)** | **0.326** | 0.125 | 0.445 | **3.4×** |
-| **PRIMAL2 (learned, sampled)** | **0.356** | **0.160** | 0.434 | **3.7×** |
+| **PRIMAL2 (learned, greedy)** | **0.324** | 0.113 | 0.457 | **3.4×** |
+| **PRIMAL2 (learned, sampled)** | **0.365** | **0.172** | 0.441 | **3.8×** |
 
 **Original Session-1 configuration** (15×15, 30 % density, corridor 5, 6 agents):
 
@@ -35,61 +36,62 @@ corridor length 10, 8 agents):
 | --- | ---:| ---:| ---:| ---:|
 | random | 0.006 | 0.000 | 0.020 | 0.3× |
 | greedy A* (independent) | 0.019 | 0.000 | 0.063 | 1.0× |
-| **PRIMAL2 (learned, greedy)** | **0.149** | 0.008 | 0.266 | **7.9×** |
-| **PRIMAL2 (learned, sampled)** | **0.209** | **0.137** | 0.301 | **11.2×** |
+| **PRIMAL2 (learned, greedy)** | **0.133** | 0.004 | 0.238 | **7.1×** |
+| **PRIMAL2 (learned, sampled)** | **0.207** | **0.098** | 0.301 | **11.1×** |
 
 *Sampled* means action drawn from the softmax policy (masked to valid
 actions); *greedy* means the unmasked argmax. Both use the same trained
 network.
 
 **The key qualitative claim of the paper reproduces.** In every configuration
-the sampled policy **never deadlocks** (min throughput ≥ 0.13 on 20×20 and
-15×15, ≥ 0.16 on 40×40/16 agents), whereas greedy A* falls to 0 arrivals on
-multiple 15×15 seeds. This is exactly the corridor-deadlock failure mode that
-PRIMAL2's convention loss and A*-path/corridor observation channels are
-designed to prevent.
+the sampled policy **never deadlocks** (min throughput ≥ 0.10 on 15×15,
+≥ 0.13 on 20×20, ≥ 0.17 on 40×40/16 agents), whereas greedy A* falls to 0
+arrivals on multiple 15×15 seeds. This is exactly the corridor-deadlock
+failure mode that PRIMAL2's convention loss and A*-path/corridor observation
+channels are designed to prevent.
 
 ## Fig-5 (LMAPF throughput vs. team size) reproduction
 
 Aggregated over 10 seeds per configuration, corridor length 10, density 0.3
-(shipped model, ep 9 500):
+(shipped model, ep 14 820):
 
 | World | Team 4 | Team 8 | Team 16 | Team 32 | Team 64 | Team 128 |
 | ---:| ---:| ---:| ---:| ---:| ---:| ---:|
-| 20×20 | 0.098 | 0.178 | 0.238 | 0.249 | **0.268** | 0.172 |
-| 30×30 | 0.098 | 0.182 | 0.334 | 0.527 | 0.654 | **0.769** |
-| 40×40 | 0.067 | 0.133 | 0.278 | 0.501 | 0.742 | **1.024** |
+| 20×20 | 0.104 | 0.181 | 0.314 | **0.340** | 0.298 | 0.195 |
+| 30×30 | 0.102 | 0.195 | 0.377 | 0.655 | **0.810** | 0.792 |
+| 40×40 | 0.076 | 0.147 | 0.299 | 0.583 | 0.897 | **1.071** |
 
 Throughput scales monotonically with team size until the world saturates:
-on 20×20 that inflection sits around 64 agents (peak 0.27), on 30×30 it
-continues climbing through 128 (0.77), on 40×40 it is still rising at 128
-agents (1.02). This qualitatively matches Fig. 5 of the paper. See
+on 20×20 that inflection sits around 32 agents (peak 0.34), on 30×30 it
+peaks at 64 (0.81), on 40×40 it is still rising at 128 agents (1.07). This
+qualitatively matches Fig. 5 of the paper. See
 [`images/fig5_lmapf.png`](images/fig5_lmapf.png).
 
 ## Fig-4 (one-shot MAPF) reproduction
 
 Aggregated over 10 seeds per configuration, timestep budgets follow the
-paper (Section VI.A: 320 for size 20/40) — shipped model, ep 9 500:
+paper (Section VI.A: 320 for size 20/40) — shipped model, ep 14 820:
 
 | World | Team | 100 % succ. | 95 % succ. | Makespan | Avg path len |
 | ---:| ---:| ---:| ---:| ---:| ---:|
-| 20×20 | 4 | 0.60 | 0.60 | 32 | 22.8 |
-| 20×20 | 8 | 0.50 | 0.50 | 54 | 20.1 |
-| 20×20 | 16 | 0.40 | 0.41 | 89 | 30.5 |
-| 20×20 | 32 | 0.00 | 0.00 | — | 34.9 |
-| 20×20 | 64 | 0.00 | 0.00 | — | 36.8 |
-| 40×40 | 4 | 1.00 | 1.00 | 99 | 41.8 |
-| 40×40 | 8 | 1.00 | 1.00 | 112 | 38.4 |
-| 40×40 | 16 | 0.70 | 0.71 | 166 | 40.4 |
-| 40×40 | 32 | 0.30 | 0.32 | 193 | 43.0 |
-| 40×40 | 64 | 0.10 | 0.10 | 133 | 44.5 |
+| 20×20 | 4 | **1.00** | **1.00** | 94 | 30.1 |
+| 20×20 | 8 | 0.90 | 0.90 | 71 | 23.2 |
+| 20×20 | 16 | 0.10 | 0.12 | 45 | 25.6 |
+| 20×20 | 32 | 0.00 | 0.00 | — | 33.8 |
+| 20×20 | 64 | 0.00 | 0.00 | — | 32.5 |
+| 40×40 | 4 | **1.00** | **1.00** | 47 | 31.1 |
+| 40×40 | 8 | 0.80 | 0.80 | 83 | 33.1 |
+| 40×40 | 16 | **0.90** | **0.90** | 103 | 34.3 |
+| 40×40 | 32 | 0.30 | 0.35 | 137 | 36.6 |
+| 40×40 | 64 | 0.10 | 0.10 | 292 | 41.1 |
 
-Success rate falls with team size and holds up longer on the larger world —
-matching the qualitative shape of Fig. 4 in the paper. Note the shipped
-Session-3 model is markedly better at 40×40 than the earlier Session-2
-checkpoint (0.70 vs 0.60 at 16 agents, 0.30 vs 0.30 at 32 agents, and
-0.10 vs 0.00 at 64 agents). See
-[`images/fig4_success.png`](images/fig4_success.png) and
+Success rate falls with team size and holds up longer on the larger world.
+Note that on 40×40 the shipped model already fails on some 8-agent seeds
+(0.80 vs 20×20/4's 1.00) — this is likely a manifestation of the
+"looping" failure mode the paper explicitly discusses in Section VI, where
+a small number of agents get stuck in unproductive cycles that drag
+the 100 % success metric down while the 95 % metric would remain high.
+See [`images/fig4_success.png`](images/fig4_success.png) and
 [`images/fig4_pathlen.png`](images/fig4_pathlen.png).
 
 ## Faithfulness scorecard

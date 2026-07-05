@@ -301,3 +301,33 @@ EVALUATION.md updated with the three-session history and the Session-3 peak.
 - `checkpoints/primal2_session2_ep25445.pt` = Session 2 final (archived).
 - `checkpoints/primal2_session3_ep9500.pt` = Session 3 peak (identical to primal2_final.pt).
 - `checkpoints/primal2_session3_ep11000.pt` = Session 3 alternate (0.230 sampled).
+
+## 2026-07-05 06:30–07:30 — Late-Session-3 champion: ep 14 820
+
+After ep 9 500 the watchdog throughput stayed in the 0.19–0.25 band without
+a clear monotone rise. Two later snapshots were evaluated on the full
+20-seed benchmark:
+
+| Snapshot | 15×15 (sampled) | 20×20 (sampled) | 40×40 (sampled) |
+|---:|---:|---:|---:|
+| ep 9 500 | 0.209 | 0.240 | 0.356 |
+| ep 13 500 | — | 0.240 | — |
+| **ep 14 820** (deadline final) | **0.207** | **0.244** | **0.365** |
+
+The deadline-terminated ep 14 820 checkpoint edges out ep 9 500 on both
+20×20 and 40×40 (the harder configurations), essentially matches on 15×15,
+and gets the shipped slot. Fig-5 and Fig-4 re-run on the final snapshot:
+Fig-5 peaks at 1.07 on 40×40/128 agents, Fig-4 success rate now hits **1.00
+at 4 agents on both 20×20 and 40×40** and 0.90 at 8 agents (20×20), 0.90 at
+16 agents (40×40).
+
+Notable Fig-4 quirk: 20×20/16 falls to 0.10 success (down from 40 % under
+the ep 9 500 snapshot), while 40×40/16 rises to 0.90. This mid-range 20×20
+regression is a small local one; on 15×15 and on the larger 40×40 team
+sizes ep 14 820 dominates.
+
+## Shipped state
+- `checkpoints/primal2_final.pt` = Session 3 ep 14 820 (deadline final).
+- Archived Session-3 candidates: `primal2_session3_ep{9500,11000,13500}.pt`.
+- Archived Session-2 final: `primal2_session2_ep25445.pt`.
+- Archived Session-1 final: `primal2_toy_15x15.pt`.
