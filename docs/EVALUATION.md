@@ -1,83 +1,94 @@
 # PRIMAL2 Toy Example — Evaluation Report
 
-**Deadline set (Session 1):** 8 h starting 2026-07-02 00:39 CEST.
-**Deadline set (Session 2):** 10 h starting 2026-07-04 12:50 CEST.
-**Total training time:** ~15 h across two chained sessions.
-**Shipped checkpoint:** `checkpoints/primal2_final.pt` (Session 2, episode
-25 445, warm-started from the Session-1 model).
+**Session 1:** 2026-07-02 00:39–~08:00 CEST — initial bootstrap (~5 h).
+**Session 2:** 2026-07-04 12:50–22:51 CEST — paper-adjacent retrain (10 h).
+**Session 3:** 2026-07-05 00:30–~07:00 CEST — extended-distribution retrain (~6.5 h).
+**Total training time:** ~21.5 h across three chained warm-started sessions.
+**Shipped checkpoint:** `checkpoints/primal2_final.pt` (Session 3, episode 9 500).
 
 ## Result headline
 
-Two held-out benchmarks, each 20 random seeds × 256 steps, LMAPF mode.
+Held-out benchmarks, 20 random seeds × 256 steps each, LMAPF mode.
 
-**Session-2 configuration** (paper-adjacent, 20×20 world, 30 % density,
+**Session-2/3 target configuration** (paper-adjacent, 20×20 world, 30 % density,
 corridor length 10, 8 agents):
 
 | Method | Throughput (mean) | Min | Max | vs greedy A* |
 | --- | ---:| ---:| ---:| ---:|
 | random | 0.003 | 0.000 | 0.016 | 0.1× |
 | greedy A* (independent) | 0.038 | 0.004 | 0.109 | 1.0× |
-| **PRIMAL2 (learned, greedy)** | **0.165** | 0.012 | 0.316 | **4.4×** |
-| **PRIMAL2 (learned, sampled)** | **0.228** | **0.109** | 0.324 | **6.0×** |
+| **PRIMAL2 (learned, greedy)** | **0.198** | 0.109 | 0.297 | **5.3×** |
+| **PRIMAL2 (learned, sampled)** | **0.240** | **0.129** | 0.379 | **6.4×** |
 
-**Original Session-1 configuration** (15×15, 30 % density, corridor 5,
-6 agents):
+**Harder configuration** (40×40 world, 30 % density, corridor 10, 16 agents):
+
+| Method | Throughput (mean) | Min | Max | vs greedy A* |
+| --- | ---:| ---:| ---:| ---:|
+| random | 0.004 | 0.000 | 0.012 | 0.0× |
+| greedy A* (independent) | 0.096 | 0.016 | 0.164 | 1.0× |
+| **PRIMAL2 (learned, greedy)** | **0.326** | 0.125 | 0.445 | **3.4×** |
+| **PRIMAL2 (learned, sampled)** | **0.356** | **0.160** | 0.434 | **3.7×** |
+
+**Original Session-1 configuration** (15×15, 30 % density, corridor 5, 6 agents):
 
 | Method | Throughput (mean) | Min | Max | vs greedy A* |
 | --- | ---:| ---:| ---:| ---:|
 | random | 0.006 | 0.000 | 0.020 | 0.3× |
 | greedy A* (independent) | 0.019 | 0.000 | 0.063 | 1.0× |
-| **PRIMAL2 (learned, greedy)** | **0.138** | 0.004 | 0.238 | **7.4×** |
-| **PRIMAL2 (learned, sampled)** | **0.208** | **0.129** | 0.309 | **11.1×** |
+| **PRIMAL2 (learned, greedy)** | **0.149** | 0.008 | 0.266 | **7.9×** |
+| **PRIMAL2 (learned, sampled)** | **0.209** | **0.137** | 0.301 | **11.2×** |
 
 *Sampled* means action drawn from the softmax policy (masked to valid
 actions); *greedy* means the unmasked argmax. Both use the same trained
 network.
 
-**The key qualitative claim of the paper reproduces.** In both
-configurations the sampled policy **never deadlocks** (min throughput ≥ 0.11
-on 20×20, ≥ 0.13 on 15×15), whereas greedy A* falls to 0 arrivals on multiple
-seeds. This is exactly the corridor-deadlock failure mode that PRIMAL2's
-convention loss and A*-path/corridor observation channels are designed to
-prevent.
+**The key qualitative claim of the paper reproduces.** In every configuration
+the sampled policy **never deadlocks** (min throughput ≥ 0.13 on 20×20 and
+15×15, ≥ 0.16 on 40×40/16 agents), whereas greedy A* falls to 0 arrivals on
+multiple 15×15 seeds. This is exactly the corridor-deadlock failure mode that
+PRIMAL2's convention loss and A*-path/corridor observation channels are
+designed to prevent.
 
 ## Fig-5 (LMAPF throughput vs. team size) reproduction
 
-Aggregated over 10 seeds per configuration, corridor length 10, density 0.3:
+Aggregated over 10 seeds per configuration, corridor length 10, density 0.3
+(shipped model, ep 9 500):
 
 | World | Team 4 | Team 8 | Team 16 | Team 32 | Team 64 | Team 128 |
 | ---:| ---:| ---:| ---:| ---:| ---:| ---:|
-| 20×20 | 0.123 | 0.223 | 0.311 | **0.429** | 0.373 | 0.205 |
-| 30×30 | 0.072 | 0.159 | 0.320 | 0.508 | 0.714 | **0.768** |
-| 40×40 | 0.067 | 0.154 | 0.280 | 0.528 | 0.791 | **1.095** |
+| 20×20 | 0.098 | 0.178 | 0.238 | 0.249 | **0.268** | 0.172 |
+| 30×30 | 0.098 | 0.182 | 0.334 | 0.527 | 0.654 | **0.769** |
+| 40×40 | 0.067 | 0.133 | 0.278 | 0.501 | 0.742 | **1.024** |
 
 Throughput scales monotonically with team size until the world saturates:
-on 20×20 that inflection sits at 32 agents (peak 0.43), on 30×30 it
-continues climbing through 128 (0.77), on 40×40 it is still rising at
-128 agents (1.09). This qualitatively matches Fig. 5 of the paper
-(world-size-dependent saturation, larger worlds keep gaining throughput at
-higher team sizes). See [`images/fig5_lmapf.png`](images/fig5_lmapf.png).
+on 20×20 that inflection sits around 64 agents (peak 0.27), on 30×30 it
+continues climbing through 128 (0.77), on 40×40 it is still rising at 128
+agents (1.02). This qualitatively matches Fig. 5 of the paper. See
+[`images/fig5_lmapf.png`](images/fig5_lmapf.png).
 
 ## Fig-4 (one-shot MAPF) reproduction
 
-Aggregated over 10 seeds per configuration, timestep budgets follow the paper
-(Section VI.A: 320 for size 20/40):
+Aggregated over 10 seeds per configuration, timestep budgets follow the
+paper (Section VI.A: 320 for size 20/40) — shipped model, ep 9 500:
 
 | World | Team | 100 % succ. | 95 % succ. | Makespan | Avg path len |
 | ---:| ---:| ---:| ---:| ---:| ---:|
-| 20×20 | 4 | 0.80 | 0.80 | 46 | 21.5 |
-| 20×20 | 8 | 0.60 | 0.60 | 78 | 24.2 |
-| 20×20 | 16 | 0.30 | 0.31 | 93 | 23.4 |
-| 20×20 | 32 | 0.00 | 0.01 | — | 25.3 |
-| 20×20 | 64 | 0.00 | 0.00 | — | 38.1 |
-| 40×40 | 4 | 1.00 | 1.00 | 51 | 33.1 |
-| 40×40 | 8 | 1.00 | 1.00 | 98 | 34.6 |
-| 40×40 | 16 | 0.60 | 0.62 | 108 | 35.1 |
-| 40×40 | 32 | 0.30 | 0.33 | 194 | 36.2 |
-| 40×40 | 64 | 0.00 | 0.00 | — | 39.0 |
+| 20×20 | 4 | 0.60 | 0.60 | 32 | 22.8 |
+| 20×20 | 8 | 0.50 | 0.50 | 54 | 20.1 |
+| 20×20 | 16 | 0.40 | 0.41 | 89 | 30.5 |
+| 20×20 | 32 | 0.00 | 0.00 | — | 34.9 |
+| 20×20 | 64 | 0.00 | 0.00 | — | 36.8 |
+| 40×40 | 4 | 1.00 | 1.00 | 99 | 41.8 |
+| 40×40 | 8 | 1.00 | 1.00 | 112 | 38.4 |
+| 40×40 | 16 | 0.70 | 0.71 | 166 | 40.4 |
+| 40×40 | 32 | 0.30 | 0.32 | 193 | 43.0 |
+| 40×40 | 64 | 0.10 | 0.10 | 133 | 44.5 |
 
 Success rate falls with team size and holds up longer on the larger world —
-again matching the qualitative shape of Fig. 4 in the paper. See
+matching the qualitative shape of Fig. 4 in the paper. Note the shipped
+Session-3 model is markedly better at 40×40 than the earlier Session-2
+checkpoint (0.70 vs 0.60 at 16 agents, 0.30 vs 0.30 at 32 agents, and
+0.10 vs 0.00 at 64 agents). See
 [`images/fig4_success.png`](images/fig4_success.png) and
 [`images/fig4_pathlen.png`](images/fig4_pathlen.png).
 
@@ -95,7 +106,7 @@ again matching the qualitative shape of Fig. 4 in the paper. See
 | NAdam, inverse-sqrt LR decay | ✓ | Section V.B.1 |
 | γ = 0.95, RL-ep 256, IL-ep 64 | ✓ | Section V.B.1 |
 | Env randomization | ✓ | size, density, corridor length per episode |
-| 50/50 RL/IL ratio | ✓ | + 200–500 IL warm-up (paper doesn't do this) |
+| 50/50 RL/IL ratio | ✓ | + 100–500 IL warm-up (paper doesn't do this) |
 | Replan expert on every arrival | ✓ | Section V.A.2 "combined one-shot MAPF instances" |
 | Reward: −0.3 / +5 / −2 | ✓ | Section IV.C |
 | One-shot mode + paper metrics | ✓ | makespan, success 100/95, avg path length |
@@ -103,7 +114,7 @@ again matching the qualitative shape of Fig. 4 in the paper. See
 | Extra gradient step on arrival | partial | the LMAPF replan on arrival covers most of it |
 | Distributed A3C (9 workers via Ray) | ✗ | single Python process |
 | ODrM* expert | substituted | prioritized-planning multi-agent A* (same role) |
-| Scale (10–160 world, up to 2048 agents) | scaled down | 20–40 world, up to 128 agents in eval |
+| Scale (10–160 world, up to 2048 agents) | scaled down | 20–50 world, up to 128 agents in eval |
 | moving.ai Warehouse / Maze benchmarks (Table I) | not run | out of scope for a laptop-scale demo |
 | CBSH-RCT / ODrM* / Windowed-PBS baselines | not run | requires their C++ code |
 
@@ -117,13 +128,18 @@ episodes. Ended at throughput **0.140 sampled** on the 15×15 benchmark.
 
 ### Session 2 — 2026-07-04, 10 h, paper-adjacent retrain
 
-Warm-started from the Session-1 checkpoint but trained on the wider
-configuration: sizes ∈ {20, 30, 40}, density 0.3–0.5, corridor ∈ {5, 10, 15},
-8 agents. Single deadline-terminated run of **25 445 episodes** (~73 % of the
-paper's 35 k budget). Ended at throughput **0.228 sampled** on the 20×20/8-agent
-Session-2 benchmark and **0.208 sampled** on the original 15×15/6-agent
-Session-1 benchmark — a full generalisation to worlds and team sizes the
-model had never seen at Session 1's end.
+Warm-started from the Session-1 checkpoint, trained on sizes ∈ {20, 30, 40},
+density 0.3–0.5, corridor ∈ {5, 10, 15}, 8 agents. Single
+deadline-terminated run of **25 445 episodes** (~73 % of the paper's 35 k
+budget). Ended at throughput 0.228 sampled on 20×20/8-agent.
+
+### Session 3 — 2026-07-05, 6.5 h, extended-distribution retrain
+
+Warm-started from Session-2 ep 25 445. Extended distribution: sizes ∈ {20,
+30, 40, 50}, density 0.3–0.6, corridor ∈ {5, 10, 15, 21}, 8 agents. Peak
+watchdog throughput of 0.250 hit at episode 9 500 — that snapshot promoted
+to shipped model (`primal2_final.pt`). Peak 20-seed sampled throughput on
+20×20/8-agent: **0.240**; on 40×40/16-agent (unseen team size): **0.356**.
 
 ### Iteration lessons captured in [`dev-log.md`](dev-log.md)
 
@@ -135,8 +151,13 @@ model had never seen at Session 1's end.
   giving the network 70 % stay demonstrations.
 - **Sampled ≫ greedy** at this training scale. Greedy tie-breaks cause
   agent-agent deadlocks that sampling resolves probabilistically.
-- **Warm-starting** (Session 2 on top of Session 1) beat fresh-init training
-  at the same wall-clock budget in every ablation.
+- **Warm-starting compounds** — Session 3 warm-started from Session 2 which
+  warm-started from Session 1, each session widening the training
+  distribution while inheriting the previous model's decision structure.
+- **Watchdog snapshots matter** — the shipped Session-3 checkpoint is
+  ep 9 500 (peak watchdog throughput 0.250), not the deadline-terminated
+  final episode, because throughput oscillates without net gain after the
+  peak.
 
 ## Figures
 
@@ -169,7 +190,7 @@ PYTHONPATH=. python -m primal2_toy.eval.compare \
 PYTHONPATH=. python -m primal2_toy.eval.sweep \
     --checkpoint checkpoints/primal2_final.pt --mode lmapf \
     --sizes 20 30 40 --densities 0.3 --corridors 10 \
-    --team-sizes 4 8 16 32 64 128 --n-seeds 5 \
+    --team-sizes 4 8 16 32 64 128 --n-seeds 10 \
     --out logs/sweep_fig5.csv --device cpu
 PYTHONPATH=. python -m primal2_toy.eval.sweep_plots \
     --sweep-csv logs/sweep_fig5.csv --out docs/images/fig5

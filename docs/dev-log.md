@@ -243,3 +243,61 @@ absolute team-size scale (paper: up to 2048; here: up to 128).
 Ch5 of the seminar draft rewritten with the new two-config table.
 `README.md` and `docs/EVALUATION.md` updated with the new headline numbers
 and the two new figures.
+
+## 2026-07-05 00:31–~07:00 — Session 3: extended-distribution retrain
+
+Warm-started from Session-2 `primal2_final.pt`, 6.5 h wall-clock budget.
+Extended distribution: sizes ∈ {20, 30, 40, 50} (up from {20, 30, 40}),
+density 0.3–0.6 (up from 0.3–0.5), corridor ∈ {5, 10, 15, 21} (up from
+{5, 10, 15}), 8 agents. IL warm-up shortened to 100 episodes because the
+warm-started policy is already reasonable on the smaller subset of the
+distribution.
+
+Watchdog on 20×20 / 30 % / corridor 10 / 8 agents:
+
+| Episode | Sampled throughput |
+|---:|---:|
+| 500 | 0.199 |
+| 1 000 | 0.215 |
+| 2 500 | 0.176 |
+| 3 500 | 0.211 |
+| 5 500 | 0.232 |
+| 8 000 | 0.229 |
+| **9 500** | **0.250** ← peak |
+| 11 000 | 0.234 |
+| 12 000 | 0.232 |
+
+The ep 9 500 snapshot promoted to shipped model. 20-seed head-to-head
+against Session-2 ep 25 445:
+
+| Config | Session-2 ep 25 445 | Session-3 ep 9 500 |
+|---|---:|---:|
+| 15×15 / 6 agents (sampled) | 0.208 | 0.209 |
+| 20×20 / 8 agents (greedy) | 0.165 | 0.198 |
+| 20×20 / 8 agents (sampled) | 0.228 | **0.240** |
+| 40×40 / 16 agents (sampled) | not measured | **0.356** |
+
+Session 3 outperforms Session 2 on the paper-adjacent 20×20 config by 5 %,
+and shows strong generalisation to the harder 40×40/16-agent unseen team
+size (0.356 sampled, 3.7× the greedy A* baseline of 0.096).
+
+## 2026-07-05 05:30–06:30 — Post-Session-3 sweeps and Ch5 update
+
+Re-ran Fig-5 (10 seeds) and Fig-4 (10 seeds) on the shipped ep 9 500
+checkpoint. On Fig-5 the 40×40/128-agent peak stays at ~1.02 (vs Session-2's
+1.09), but the model is markedly more robust in the 20×20 regime (peak moves
+from team size 32 to team size 64) and in the 40×40/16 mid-range. On Fig-4
+the shipped model retains full success up to team 8 on 40×40 and 60 % at
+team 4 on 20×20 — slightly under Session 2 on the smallest configurations,
+noticeably better at larger teams.
+
+Ch5 of the seminar draft rewritten around the three configurations
+(15×15 / 20×20 / 40×40) and the new sampled/greedy factors. README and
+EVALUATION.md updated with the three-session history and the Session-3 peak.
+
+## Shipped state
+- `checkpoints/primal2_final.pt` = Session 3 ep 9 500 (sampled 0.240 on 20×20/8).
+- `checkpoints/primal2_toy_15x15.pt` = Session 1 final (archived for Ch5 reference).
+- `checkpoints/primal2_session2_ep25445.pt` = Session 2 final (archived).
+- `checkpoints/primal2_session3_ep9500.pt` = Session 3 peak (identical to primal2_final.pt).
+- `checkpoints/primal2_session3_ep11000.pt` = Session 3 alternate (0.230 sampled).

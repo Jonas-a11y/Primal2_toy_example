@@ -16,13 +16,12 @@ On a held-out benchmark of 20 seeds × 256 steps, **20×20 world, 30 % density, 
 | --- | ---:| ---:|
 | random | 0.003 | 0.1× |
 | greedy A* (independent) | 0.038 | 1.0× |
-| **PRIMAL2 (learned, greedy)** | **0.165** | **4.4×** |
-| **PRIMAL2 (learned, sampled)** | **0.228** | **6.0×** |
+| **PRIMAL2 (learned, greedy)** | **0.198** | **5.3×** |
+| **PRIMAL2 (learned, sampled)** | **0.240** | **6.4×** |
 
-On the smaller original toy benchmark (15×15, 6 agents, corridor 5):
-- random 0.006 · greedy A* 0.019 · **PRIMAL2 sampled 0.208** (11.1× greedy A*).
+On the harder 40×40 / 16-agent LMAPF benchmark: **PRIMAL2 sampled 0.356 (3.7× greedy A*)**. On the smaller 15×15 / 6 agent benchmark: **PRIMAL2 sampled 0.209 (11.2× greedy A*)**.
 
-The trained policy also **never deadlocks** in either configuration — its worst-seed throughput stays at 0.109 (20×20) or 0.129 (15×15), whereas greedy A* hits 0 arrivals on several seeds.
+The trained policy also **never deadlocks** in any tested configuration — its worst-seed throughput stays ≥ 0.129, whereas greedy A* hits 0 arrivals on several seeds.
 
 See [`docs/EVALUATION.md`](docs/EVALUATION.md) for the full write-up.
 
