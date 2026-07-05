@@ -60,20 +60,21 @@ higher team sizes). See [`images/fig5_lmapf.png`](images/fig5_lmapf.png).
 
 ## Fig-4 (one-shot MAPF) reproduction
 
-Aggregated over 5 seeds per configuration, timestep budgets follow the paper
+Aggregated over 10 seeds per configuration, timestep budgets follow the paper
 (Section VI.A: 320 for size 20/40):
 
 | World | Team | 100 % succ. | 95 % succ. | Makespan | Avg path len |
 | ---:| ---:| ---:| ---:| ---:| ---:|
-| 20×20 | 4 | 1.00 | 1.00 | 75 | 26.5 |
-| 20×20 | 8 | 0.60 | 0.60 | 47 | 20.2 |
-| 20×20 | 16 | 0.20 | 0.22 | 118 | 24.7 |
-| 20×20 | 32 | 0.00 | 0.00 | — | 25.8 |
-| 40×40 | 4 | 1.00 | 1.00 | 86 | 37.2 |
-| 40×40 | 8 | 1.00 | 1.00 | 112 | 36.0 |
-| 40×40 | 16 | 0.80 | 0.80 | 137 | 40.0 |
-| 40×40 | 32 | 0.40 | 0.40 | 168 | 38.5 |
-| 40×40 | 64 | 0.00 | 0.00 | — | 38.7 |
+| 20×20 | 4 | 0.80 | 0.80 | 46 | 21.5 |
+| 20×20 | 8 | 0.60 | 0.60 | 78 | 24.2 |
+| 20×20 | 16 | 0.30 | 0.31 | 93 | 23.4 |
+| 20×20 | 32 | 0.00 | 0.01 | — | 25.3 |
+| 20×20 | 64 | 0.00 | 0.00 | — | 38.1 |
+| 40×40 | 4 | 1.00 | 1.00 | 51 | 33.1 |
+| 40×40 | 8 | 1.00 | 1.00 | 98 | 34.6 |
+| 40×40 | 16 | 0.60 | 0.62 | 108 | 35.1 |
+| 40×40 | 32 | 0.30 | 0.33 | 194 | 36.2 |
+| 40×40 | 64 | 0.00 | 0.00 | — | 39.0 |
 
 Success rate falls with team size and holds up longer on the larger world —
 again matching the qualitative shape of Fig. 4 in the paper. See
